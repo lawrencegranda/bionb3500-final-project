@@ -10,11 +10,15 @@
 
 \begin{document}
 
+\maketitle
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ OVERVIEW ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Overview}
 Transformer-based language models such as BERT and DistilBERT produce contextualized word embeddings. Given an input sentence, these models output a sequence of high-dimensional vectors (one per token) representing how each word's meaning is shaped by its surrounding context. For example, the word \textit{bank} appears in very different contexts: \textit{river bank}, \textit{finance bank}, or \textit{seating bank}. Although the surface form is identical, we expect the model to internally represent these occurrences differently depending on their meaning.
 
-Our goal is to investigate how these embeddings reflect context-dependent meaning and whether transformer models implicitly separate different senses of the same word. Specifically, we will analyze how the embeddings of ambiguous words distribute in vector space across multiple contexts. We expect embeddings of the same sense (e.g., \textit{river bank}, \textit{muddy bank}) to cluster closely together, while embeddings from different senses (e.g., \textit{bank account} vs. \textit{river bank}) should be far apart.
+Our goal is to investigate how these embeddings reflect context-dependent meaning and whether transformer models implicitly separate different senses of the same word. Specifically, we will analyze how the embeddings of ambiguous words distribute in vector space across multiple contexts. We expect embeddings of the same sense (e.g., \textit{river bank}, \textit{muddy bank}) to cluster closely together, while embeddings from different senses (e.g., \textit{bank account} vs.\,\textit{river bank}) should be far apart.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ HYPOTHESES ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Hypotheses}
@@ -22,6 +26,9 @@ Our goal is to investigate how these embeddings reflect context-dependent meanin
     \item \textbf{H1: Unsupervised Sense Induction.} If a model truly learns to represent meaning, then the embeddings of the same word used in different contexts should naturally form clusters corresponding to distinct senses, even without explicit supervision.
     \item \textbf{H2: Layer-wise Semantic Specialization.} Lower layers of the transformer encode surface and syntactic information, while deeper layers capture more abstract, semantic representations. We hypothesize that sense differentiation emerges and peaks in the middle-to-upper layers, before the final layers become too specialized or task-tuned.
 \end{enumerate}
+
+\newpage
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ METHODS ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Methods}
@@ -32,18 +39,26 @@ We will extract contextual embeddings for polysemous words (e.g., \textit{bank},
     \item Quantify separation with cluster metrics (e.g., silhouette score, ARI/NMI when labels available) as a function of layer depth and model.
 \end{itemize}
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ EVALUATION PLAN ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Evaluation Plan}
 We will evaluate whether sense-specific groupings emerge without supervision (H1) and where they are strongest across layers (H2). For H1, we expect clear multi-modal structure corresponding to distinct senses. For H2, we expect clustering quality to increase from lower layers, peak in middle-to-upper layers, and possibly taper near the output layers.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ FEASIBILITY ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Feasibility}
 To evaluate feasibility, we obtained an automated research report from Google Gemini's Research mode (\url{https://gemini.google.com/share/8ef7ab3edcd1}). While informative, the report may be biased toward conservative (null) conclusions; therefore, our analysis will emphasize rigorous quantitative tests and clear visualizations.
 
+\newpage
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ RELATED WORK ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Related Work}
-Our study is related to work on clustering with large-language-model embeddings \cite{petukhova2025}, analyses of polysemy in BERT \cite{yenicelik2020}, and investigations of layer-wise representational dynamics in transformers \cite{nadipalli2025}.
-\makereferences
+Our study is related to work on clustering with LLM embeddings\,\cite{petukhova2025}, analyses of polysemy in BERT\,\cite{yenicelik2020}, and investigations of layer-wise representational dynamics in transformers\,\cite{nadipalli2025}.
+
+\makecitations%
+\vfill
+\pagebreak
 
 \end{document}
 

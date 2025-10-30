@@ -1,7 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{template}
 
-\LoadClass[manuscript,nonacm]{acmart}
+\LoadClass[10pt,sigconf,nonacm]{acmart}
 
 
 % Basic packages
@@ -51,6 +51,8 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ AT BEGIN DOCUMENT ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\settopmatter{printacmref=false,printfolios=false,authorsperrow=1}
+
 \AtBeginDocument{
 	% Title and subtitle
 	\title[\projecttitle]{\projecttitle}
@@ -63,11 +65,10 @@
 	\email{\useremail}
 	\affiliation{%
 		\institution{\coursename}
+		\city{Ithaca}
 		\country{USA}}
 	\authornote{GitHub: \url{\github}.}
 
 	% Watermark content
 	\SetWatermarkText{\name\ ~\textlangle{}\useremail\textrangle{}}
-
-	\maketitle
 }
