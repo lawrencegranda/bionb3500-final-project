@@ -1,66 +1,39 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{template}
 
-\LoadClass[12pt]{article}
+\LoadClass[manuscript,nonacm]{acmart}
+
 
 % Basic packages
-\RequirePackage{parskip}
-\RequirePackage{cite}
 \RequirePackage{graphicx}
-\RequirePackage[hidelinks]{hyperref}
+\RequirePackage{bookmark}
+\RequirePackage{microtype}
 
-% Fonts
-\RequirePackage{fontspec}
-\defaultfontfeatures[EBGaramond]{
-	Ligatures={Common},
-	UprightFont=*-Regular,
-	BoldFont=*-SemiBold,
-	ItalicFont=*-Italic,
-	BoldItalicFont=*-SemiBoldItalic,
-	Extension=.otf}
 
-\setmainfont{EBGaramond}
+% Very light watermark
+\RequirePackage{draftwatermark}
+\SetWatermarkAngle{45}
+\SetWatermarkLightness{0.92}
+\SetWatermarkScale{0.2}
 
-% Page layout
-\RequirePackage[margin=1in]{geometry}
-\geometry{
-	letterpaper,
-	top=1in,
-	left=1in,
-	right=1in,
-	bottom=1in,
-	headheight=14pt,
-}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ INFO ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \newcommand{\projecttitle}{Title}
 \newcommand{\projectsubtitle}{Subtitle}
 \newcommand{\name}{Lawrence Granda Zarzuela}
-\newcommand{\email}{lg626@cornell.edu}
+\newcommand{\useremail}{lg626@cornell.edu}
 \newcommand{\github}{https://github.com/lawrencegranda}
 \newcommand{\bibfile}{bibfile}
+\newcommand{\coursename}{Cornell University. BIONB 3500}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ HEADER AND FOOTER ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\RequirePackage{fancyhdr}
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[L]{\projecttitle}
-\fancyhead[R]{\name}
-\fancyfoot[C]{\thepage}
-\renewcommand{\headrulewidth}{0pt}
+% Headers and footers are handled by the ACM class
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ TITLE ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\newcommand{\makedocumenttitle}{
-	\begin{center}
-		\vspace*{-20pt}
-		\textbf{\Large \projecttitle}
+% Title is produced by ACM's \maketitle
 
-		\textbf{\large \projectsubtitle}
-	\end{center}
-}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ CITATIONS ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\makecitations}{
@@ -79,5 +52,22 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ AT BEGIN DOCUMENT ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \AtBeginDocument{
-	\makedocumenttitle
+	% Title and subtitle
+	\title[\projecttitle]{\projecttitle}
+	\ifx\projectsubtitle\empty\else
+		\subtitle{\projectsubtitle}
+	\fi
+
+	% Author metadata with course affiliation
+	\author{\name}
+	\email{\useremail}
+	\affiliation{%
+		\institution{\coursename}
+		\country{USA}}
+	\authornote{GitHub: \url{\github}.}
+
+	% Watermark content
+	\SetWatermarkText{\name\ ~\textlangle{}\useremail\textrangle{}}
+
+	\maketitle
 }
