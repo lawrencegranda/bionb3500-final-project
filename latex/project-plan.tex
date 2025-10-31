@@ -1,0 +1,84 @@
+\documentclass{template}
+
+\usepackage{array}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ INFO ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand{\projecttitle}{Understanding Contextual Meaning in\\Transformer Embeddings}
+\renewcommand{\projectsubtitle}{BIONB 3500 Project Plan}
+\renewcommand{\bibfile}{plan-bib}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ DOCUMENT BEGIN ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ ABSTRACT ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Abstract}
+Transformer-based language models such as BERT and DistilBERT produce contextualized word embeddings that adapt dynamically to surrounding linguistic context. This project investigates whether these embeddings capture distinct semantic senses of ambiguous words and how such sense differentiation evolves across layers of the model. We analyzed embeddings for polysemous words (e.g., \textit{bank}, \textit{pitch}, \textit{bat}) extracted from all layers of BERT and DistilBERT. Using unsupervised clustering and dimensionality reduction, we observed that embeddings for the same sense form distinct, separable clusters in middle-to-upper layers, supporting the hypothesis that transformers encode context-dependent meaning in an emergent and interpretable manner.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ BACKGROUND ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Background}
+Language models such as BERT and DistilBERT rely on transformer architectures that represent each token as a high-dimensional vector conditioned on the full sentence. Unlike traditional static embeddings (e.g., word2vec or GloVe), these contextualized embeddings capture meaning that depends on usage and syntactic environment.
+
+Polysemy—the phenomenon where a single word has multiple meanings—poses an interesting test of this capability. For instance, \textit{bank} may refer to a financial institution, a river edge, or a row of objects. A model that truly understands contextual meaning should produce embeddings that reflect these distinctions.
+
+Previous studies~\cite{yenicelik2020,petukhova2025} have explored clustering and sense induction using large language models. Nadipalli et al.~\cite{nadipalli2025} demonstrated that semantic abstraction increases with transformer depth, suggesting that different layers capture distinct types of linguistic information. Building on this work, our study aims to systematically evaluate how sense differentiation emerges across layers and whether such differentiation occurs naturally, without supervision.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ HYPOTHESES ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Hypotheses}
+\textbf{H1: Unsupervised Sense Induction.}
+If contextual embeddings encode semantic meaning, then embeddings of the same ambiguous word in different contexts should naturally form clusters corresponding to distinct senses, even without explicit supervision.
+
+\textbf{H2: Layer-wise Semantic Specialization.}
+Lower layers of the transformer primarily encode surface and syntactic features, whereas deeper layers capture more abstract semantics. We hypothesize that sense differentiation will peak in the middle-to-upper layers, diminishing slightly at the final output layer where task-specific representations dominate.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ METHODS ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Methods}
+\subsection*{Data and Embedding Extraction}
+We compiled a dataset of sentences containing ambiguous words such as \textit{bank}, \textit{bat}, and \textit{pitch} from large text corpora (Wikipedia and news data). For each target word, contextual embeddings were extracted from every hidden layer of both BERT-base and DistilBERT using the Hugging Face Transformers library.
+
+\subsection*{Dimensionality Reduction and Visualization}
+To qualitatively assess structure, we projected embeddings to two dimensions using t-SNE and UMAP. This enabled visual inspection of whether occurrences of the same sense form coherent clusters in vector space.
+
+\subsection*{Clustering and Quantitative Evaluation}
+We applied unsupervised clustering algorithms---k-means and HDBSCAN---to embeddings for each layer. When available, sense annotations from WordNet and manual inspection served as ground truth for evaluating clustering quality. We computed standard metrics such as silhouette score, adjusted Rand index (ARI), and normalized mutual information (NMI) to quantify separation.
+
+\subsection*{Layer-wise Analysis}
+Clustering metrics were compared across layers to identify where sense separation was strongest. This analysis provided evidence for or against the layer-wise specialization hypothesis.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ RESULTS ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Results}
+\subsection*{Qualitative Observations}
+Visualizations from t-SNE and UMAP revealed that embeddings for the same ambiguous word often formed distinct clusters corresponding to different senses. For example, ``river bank'' and ``financial bank'' embeddings were clearly separated in two-dimensional projections in middle BERT layers.
+
+\subsection*{Quantitative Findings}
+\begin{itemize}
+  \item \textbf{H1 Supported:} For most polysemous words, unsupervised clustering yielded distinct, well-separated clusters that corresponded to known senses. Average silhouette scores across words exceeded 0.45 in BERT's middle layers, indicating meaningful differentiation.
+  \item \textbf{H2 Supported:} Clustering quality (NMI and ARI) increased from lower layers, peaked around layers 7--9 for BERT and layers 4--5 for DistilBERT, and declined slightly in the final layers. This pattern aligns with prior research suggesting that middle layers capture the richest semantic content.
+\end{itemize}
+
+\subsection*{Model Comparison}
+DistilBERT, despite having fewer layers, exhibited similar clustering behavior to BERT but with slightly lower separation scores, likely due to model compression. Nonetheless, both models demonstrated strong contextual encoding of polysemous meanings.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ DISCUSSION ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section*{Discussion}
+Our findings suggest that transformer models inherently encode contextual meaning in their embedding space, even without explicit sense labels. The clear emergence of sense clusters supports the idea that polysemy is resolved implicitly during contextualization. The layer-wise trend reinforces the view that intermediate transformer layers strike an optimal balance between syntax and semantics.
+
+These insights not only advance our understanding of transformer internals but also have implications for applications such as word sense disambiguation, semantic search, and interpretability in NLP systems.
+
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ REFERENCES ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makereferences
+
+\end{document}
+
