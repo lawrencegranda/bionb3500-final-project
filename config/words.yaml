@@ -1,0 +1,15 @@
+targets:
+  - word: bank
+    senses:
+      - finance
+      - river
+      - seats
+  - word: bat
+    senses:
+      - animal
+      - sports
+  - word: pitch
+    senses:
+      - music
+      - sports
+      - sales
