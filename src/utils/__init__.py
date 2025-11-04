@@ -7,21 +7,17 @@ from .sentences import (
 )
 from .senses import (
     SenseDefinition,
-    build_sense_map,
-    synset_to_label,
-    sense_map_to_json,
     SenseMap,
-    GlossMap,
+    SenseMapType,
+    GlossMapType,
 )
 
 __all__ = [
     "clean_sentence",
     "is_valid_sentence",
-    "build_sense_map",
-    "synset_to_label",
-    "sense_map_to_json",
     "SenseDefinition",
     "SentenceRecord",
     "SenseMap",
-    "GlossMap",
+    "SenseMapType",
+    "GlossMapType",
 ]

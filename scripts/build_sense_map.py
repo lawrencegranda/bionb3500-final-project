@@ -20,20 +20,19 @@ if str(SRC_ROOT) not in sys.path:
 
 
 from utils.senses import (  # pylint: disable=C0413,E0401
-    GlossMap,
-    build_sense_map,
-    sense_map_to_json,
+    GlossMapType,
+    SenseMap,
 )
 
 
-def load_gloss_map(words_path: Path) -> GlossMap:
+def load_gloss_map(words_path: Path) -> GlossMapType:
     """Load the gloss substring configuration from ``words.yaml``."""
 
     with words_path.open("r", encoding="utf-8") as handle:
         payload = yaml.safe_load(handle) or {}
 
     targets = payload.get("targets", [])
-    gloss_map: GlossMap = {}
+    gloss_map: GlossMapType = {}
 
     for target in targets:
         word = target.get("word")
@@ -85,8 +84,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     if not gloss_map:
         raise ValueError(f"No targets found in {args.words}")
 
-    sense_map = build_sense_map(gloss_map)
-    writable = sense_map_to_json(sense_map)
+    sense_map = SenseMap.from_gloss(gloss_map)
+    writable = sense_map.to_json()
     _write_json(writable, args.output)
 
     print(f"Sense map written to {args.output}")

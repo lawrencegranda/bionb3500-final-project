@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from collections import defaultdict
-from typing import Dict, Optional, Set, Tuple, TypeAlias, Sequence
+from typing import Dict, Optional, Sequence, Set, Tuple, TypeAlias
 
 import nltk  # pylint: disable=E0401
 
@@ -13,8 +13,8 @@ from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
 
 
 Sense = wn.synset
-SenseMap: TypeAlias = Dict[str, Dict[str, Set[Sense]]]
-GlossMap: TypeAlias = Dict[str, Dict[str, Set[str]]]
+SenseMapType: TypeAlias = Dict[str, Dict[str, Set[Sense]]]
+GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
 
 
 @dataclass(frozen=True)
@@ -48,56 +48,64 @@ def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[Sense]:
     return synsets
 
 
-def build_sense_map(
-    gloss_map: Optional[GlossMap],
-) -> SenseMap:
-    """
-    Build a mapping from word -> label -> set of matching WordNet synset keys.
+@dataclass(init=False, slots=True)
+class SenseMap:
+    """Wrapper around a ``word -> label -> synset`` mapping."""
 
-    Returns:
-        SenseMap: mapping from word to label to set of wn.Synset keys.
-    """
-    result: SenseMap = defaultdict(lambda: defaultdict(set))
+    _sense_map: SenseMapType
 
-    for word, label_to_gloss in gloss_map.items():
-        for label, gloss_set in label_to_gloss.items():
-            result[word][label] = _synsets_by_glosses(word, gloss_set)
+    def __init__(self, sense_map: SenseMapType) -> None:
+        self._sense_map = sense_map
 
-    return result
+    @classmethod
+    def from_gloss(cls, gloss_map: GlossMapType) -> "SenseMap":
+        """Build a ``SenseMap`` from a ``GlossMap`` definition."""
+        result: SenseMapType = defaultdict(lambda: defaultdict(set))
 
+        for word, label_to_gloss in gloss_map.items():
+            for label, gloss_set in label_to_gloss.items():
+                result[word][label] = _synsets_by_glosses(word, gloss_set)
 
-def synset_to_label(syn: Sense, sense_map: SenseMap) -> Optional[Tuple[str, str]]:
-    """
-    Return the word and label for a synset in the sense map.
+        return cls(result)
 
-    - `syn`: the synset to look up.
-    - `sense_map`: the sense map to use.
+    @classmethod
+    def from_dict(cls, serialisable: Dict[str, Dict[str, Sequence[str]]]) -> "SenseMap":
+        """Build a ``SenseMap`` from a serialisable mapping of synset names."""
+        result: SenseMapType = defaultdict(lambda: defaultdict(set))
 
-    Returns:
-        Optional[Tuple[str, str]]: the word and label for the synset, or None if not found.
-    """
-    for word, label_to_synsets in sense_map.items():
-        for label, synsets in label_to_synsets.items():
-            if syn in synsets:
-                return (word, label)
+        for word, label_to_names in serialisable.items():
+            for label, synset_names in label_to_names.items():
+                synsets = set(wn.synset(s) for s in synset_names)
+                result[word][label] = synsets
 
-    return None
+        return cls(result)
 
+    @property
+    def sense_map(self) -> SenseMapType:
+        """Return the internal sense map."""
+        return self._sense_map
 
-def sense_map_to_json(sense_map: SenseMap) -> Dict[str, Dict[str, Sequence[str]]]:
-    """Convert the ``SenseMap`` of synsets into JSON-serialisable sensekeys.
+    def synset_to_label(self, syn: Sense) -> Optional[Tuple[str, str]]:
+        """
+        Return the word and label for a synset in the sense map.
 
-    - `sense_map`: the sense map to convert.
+        - `syn`: the synset to look up.
 
-    Returns:
-        Dict[str, Dict[str, Sequence[str]]]: the JSON-serialisable sensemap.
-    """
+        Returns:
+            Optional[Tuple[str, str]]: the word and label for the synset, or None if not found.
+        """
+        for word, label_to_synsets in self._sense_map.items():
+            for label, synsets in label_to_synsets.items():
+                if syn in synsets:
+                    return (word, label)
+        return None
 
-    serialisable: Dict[str, Dict[str, Sequence[str]]] = {}
-    for word, label_to_synsets in sense_map.items():
-        serialisable[word] = {}
-        for label, synsets in label_to_synsets.items():
-            keys = [synset.name() for synset in synsets]
-            serialisable[word][label] = sorted(set(keys))
-
-    return serialisable
+    def to_json(self) -> Dict[str, Dict[str, Sequence[str]]]:
+        """Convert the SenseMap of synsets into JSON-serialisable synset names."""
+        serialisable: Dict[str, Dict[str, Sequence[str]]] = {}
+        for word, label_to_synsets in self._sense_map.items():
+            serialisable[word] = {}
+            for label, synsets in label_to_synsets.items():
+                keys = [synset.name() for synset in synsets]
+                serialisable[word][label] = sorted(set(keys))
+        return serialisable
