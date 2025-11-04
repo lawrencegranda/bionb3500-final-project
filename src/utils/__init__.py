@@ -10,6 +10,7 @@ from .senses import (
     SenseMap,
     SenseMapType,
     GlossMapType,
+    SenseType,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "SenseMap",
     "SenseMapType",
     "GlossMapType",
+    "SenseType",
 ]

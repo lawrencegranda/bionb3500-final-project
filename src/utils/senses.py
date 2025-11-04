@@ -12,8 +12,8 @@ nltk.download("omw-1.4", quiet=True)
 from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
 
 
-Sense = wn.synset
-SenseMapType: TypeAlias = Dict[str, Dict[str, Set[Sense]]]
+SenseType = wn.synset
+SenseMapType: TypeAlias = Dict[str, Dict[str, Set[SenseType]]]
 GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
 
 
@@ -25,7 +25,7 @@ class SenseDefinition:
     wn_key: str
 
 
-def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[Sense]:
+def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[SenseType]:
     """
     Pick a synset for a lemma by a set of substrings in its definition.
 
@@ -33,7 +33,7 @@ def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[Sense]:
     - `gloss_set`: the set of substrings in the definition to match.
 
     Returns:
-        Set[Sense]: Set of synsets matching the glosses.
+        Set[SenseType]: Set of synsets matching the glosses.
     """
     synsets = set()
 
@@ -85,7 +85,7 @@ class SenseMap:
         """Return the internal sense map."""
         return self._sense_map
 
-    def synset_to_label(self, syn: Sense) -> Optional[Tuple[str, str]]:
+    def synset_to_label(self, syn: SenseType) -> Optional[Tuple[str, str]]:
         """
         Return the word and label for a synset in the sense map.
 
