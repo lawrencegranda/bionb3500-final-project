@@ -1,0 +1,33 @@
+{
+  "bank": {
+    "finance": [
+      "bank.n.09",
+      "depository_financial_institution.n.01",
+      "savings_bank.n.02"
+    ],
+    "river": [
+      "bank.n.01"
+    ]
+  },
+  "bat": {
+    "animal": [
+      "bat.n.01"
+    ],
+    "sports": [
+      "bat.n.02",
+      "bat.n.05"
+    ]
+  },
+  "pitch": {
+    "music": [
+      "pitch.n.01"
+    ],
+    "sales": [
+      "sales_talk.n.01"
+    ],
+    "sports": [
+      "pitch.n.02",
+      "pitch.n.10"
+    ]
+  }
+}
