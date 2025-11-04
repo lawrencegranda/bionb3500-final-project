@@ -1,20 +1,10 @@
 """Utilities for validating and cleaning sentences."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 import re
 from typing import Sequence
 
 _VALID_SENTENCE_PATTERN = re.compile(r"^(?!\\s)([a-z0-9]+)(\\s[a-z0-9]+){0,18}$")
-
-
-@dataclass(frozen=True)
-class SenseDefinition:
-    """Canonical information for a sense of a given lemma."""
-
-    label: str
-    wn_key: str
 
 
 @dataclass
