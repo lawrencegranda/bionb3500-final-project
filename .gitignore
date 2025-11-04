@@ -11,3 +11,4 @@
 *.out
 *.synctex*
 .specstory/
+__pycache__/
