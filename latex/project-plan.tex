@@ -54,23 +54,23 @@ Clustering metrics were compared across layers to identify where sense separatio
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ IMPLEMENTATION PLAN ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Implementation Plan}
-To keep the project reproducible while minimizing infrastructure overhead, we will center the pipeline on a small corpus directory paired with a single SQLite database. This combination supports transparent inspection of examples, straightforward version control, and flexible programmatic queries.
+To keep the project reproducible while minimizing infrastructure overhead, we will center the pipeline on a small corpus directory paired with a single SQLite database. This combination supports transparent inspection of examples, straightforward version control, and flexible programmatic queries. All corpus material comes from the SemCor subset distributed in UFSAC, which already supplies gold WordNet 3.0 sensekeys and sentence boundaries.
 
 \subsection*{Data Layout and Indexing}
-Curated sentences will reside under a \texttt{\small data/} directory with one subfolder per lemma and one plain-text file per sense (e.g., \texttt{\small data/bank/finance.txt}, \texttt{\small data/bank/river.txt}). We will mirror this layout in a lightweight SQLite database whose \texttt{\small sentences} table tracks the lemma, human-readable sense label, WordNet sense key, cleaned sentence, token count, corpus source, and the token index of the target occurrence. This schema aligns with the downstream need to filter examples by sense or regroup them for layer-wise analysis.
+SemCor-derived sentences will reside under a \texttt{\small data/} directory with one subfolder per lemma and one plain-text file per sense (e.g., \texttt{\small data/bank/finance.txt}, \texttt{\small data/bank/river.txt}). We will mirror this layout in a lightweight SQLite database whose \texttt{\small sentences} table tracks the lemma, human-readable sense label, WordNet sensekey, cleaned sentence, token count, corpus source (SemCor via UFSAC), and the token index of the target occurrence. This schema aligns with the downstream need to filter examples by sense or regroup them for layer-wise analysis.
 
 \subsection*{Preprocessing Specification}
-Every sentence will be lowercased, stripped of punctuation, and normalized so that repeated whitespace collapses to a single space. We will accept sentences with fewer than twenty tokens that contain exactly one instance of the target lemma as a standalone token. Each text file will contain one sentence per line with no leading or trailing spaces, and we will deduplicate exact matches within a file. The validation regex
+UFSAC already provides normalized tokens, but we will still lowercase sentences, strip extraneous punctuation, and collapse repeated whitespace to a single space prior to export. We will accept sentences with fewer than twenty tokens that contain exactly one instance of the target lemma as a standalone token. Each text file will contain one sentence per line with no leading or trailing spaces, and we will deduplicate exact matches within a file. The validation regex
 \begin{verbatim}
   ^(?!\\s)([a-z0-9]+)(\s[a-z0-9]+){0,18}$
 \end{verbatim}
 encodes this admissible format and enforces the token-length constraint.
 
 \subsection*{Sense Inventory}
-WordNet will serve as the canonical sense inventory. A \texttt{\small senses.json} file will list, for each lemma, the top two or three high-frequency WordNet sense keys (e.g., \texttt{\small bank\%1:14:00::}) alongside concise human labels such as finance, river, or sports. A companion \texttt{\small labels.yml} will map each key to its human-friendly label, ensuring that renaming a label never disrupts persistent references to the underlying WordNet identifier.
+WordNet 3.0 will serve as the canonical sense inventory. A \texttt{\small senses.json} file will list, for each lemma, the SemCor sensekeys we intend to keep (e.g., \texttt{\small bank\%1:14:00::}) alongside concise human labels such as finance, river, or sports. A companion \texttt{\small labels.yml} will map each sensekey to its human-friendly label, ensuring that renaming a label never disrupts persistent references to the underlying WordNet identifier.
 
-\subsection*{Sentence Harvesting and Labeling}
-We will harvest candidate sentences containing the target lemma from reproducible sources such as Wikipedia and news corpora. After cleaning, we will assign senses using a deterministic heuristic---initially the Simplified Lesk algorithm from NLTK---constrained to the standardized sense inventory in \texttt{\small senses.json}. Accepted sentences will be appended to the appropriate sense-specific text file and inserted into \texttt{\small index.db} with their metadata, including the token index of the target word. This dual recording keeps disk storage and the relational index synchronized.
+\subsection*{SemCor Extraction Pipeline}
+We will rely on the UFSAC release of SemCor (gold WordNet sense annotations and sentence segmentation). The pipeline proceeds as follows: (1) download and unpack the UFSAC archive, keeping the SemCor split; (2) use NLTK's WordNet interface to confirm the sensekeys enumerated in \texttt{\small senses.json} for each lemma; (3) filter SemCor sentences where the surface form of the lemma appears exactly once (case-insensitive) and the attached key matches the desired inventory; and (4) write the resulting sentences to respective sense-specific text files while inserting aligned records into \texttt{\small index.db}. This approach preserves UFSAC's gold labels and removes the need for heuristic annotation.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ RESULTS ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

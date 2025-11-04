@@ -15,7 +15,7 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%------ OVERVIEW ------%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section*{Overview}
-Transformer-based language models such as BERT and DistilBERT produce contextualized word embeddings. Given an input sentence, these models output a sequence of high-dimensional vectors (one per token) representing how each word's meaning is shaped by its surrounding context. For example, the word \textit{bank} appears in very different contexts: \textit{river bank}, \textit{finance bank}, or \textit{seating bank}. Although the surface form is identical, we expect the model to internally represent these occurrences differently depending on their meaning.
+Transformer-based language models such as BERT and DistilBERT produce contextualized word embeddings. Given an input sentence, these models output a sequence of high-dimensional vectors (one per token) representing how each word's meaning is shaped by its surrounding context. For example, the word \textit{bank} appears in very different contexts: \textit{river bank}, or \textit{finance bank}. Although the surface form is identical, we expect the model to internally represent these occurrences differently depending on their meaning.
 
 Our goal is to investigate how these embeddings reflect context-dependent meaning and whether transformer models implicitly separate different senses of the same word. Specifically, we will analyze how the embeddings of ambiguous words distribute in vector space across multiple contexts. We expect embeddings of the same sense (e.g., \textit{river bank}, \textit{muddy bank}) to cluster closely together, while embeddings from different senses (e.g., \textit{bank account} vs.\,\textit{river bank}) should be far apart.
 

@@ -1,15 +1,14 @@
 targets:
   - word: bank
     senses:
-      - finance
-      - river
-      - seats
+      finance: ["financ", "bank", "money"]
+      river: ["river", "water"]
   - word: bat
     senses:
-      - animal
-      - sports
+      animal: ["animal", "mammal"]
+      sports: ["stick", "baseball", "ball"]
   - word: pitch
     senses:
-      - music
-      - sports
-      - sales
+      music: ["sound"]
+      sports: ["throw", "baseball", "ball"]
+      sales: ["speech", "promotion"]
