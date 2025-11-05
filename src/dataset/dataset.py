@@ -77,13 +77,13 @@ class Dataset:
         self._conn.execute(
             f"""
             INSERT OR IGNORE INTO {self.TABLE_NAME}
-            (lemma, text, wn_key, tokens, source)
+            (lemma, text, synset, tokens, source)
             VALUES (?, ?, ?, ?, ?)
             """,
             (
                 record.lemma,
                 record.text,
-                record.wn_key,
+                record.synset,
                 tokens_json,
                 record.source,
             ),
@@ -97,7 +97,7 @@ class Dataset:
         """Yield ``SentenceRecord`` instances stored in the dataset."""
 
         # Fetch all records from the dataset
-        query = f"SELECT lemma, text, wn_key, tokens, source FROM {self.TABLE_NAME}"
+        query = f"SELECT lemma, text, synset, tokens, source FROM {self.TABLE_NAME}"
 
         params: Tuple[str, ...] = ()
 
@@ -109,7 +109,7 @@ class Dataset:
         # Filter by senses if provided
         if senses is not None and len(senses) > 0:
             query += (
-                " WHERE wn_key IN (SELECT wn_key FROM senses WHERE sense_key IN (?))"
+                " WHERE synset IN (SELECT synset FROM senses WHERE sense_key IN (?))"
             )
             params += tuple(s.name() for s in senses)
 
@@ -124,7 +124,7 @@ class Dataset:
                 lemma=row["lemma"],
                 text=row["text"],
                 tokens=tokens,
-                synset=row["wn_key"],
+                synset=row["synset"],
                 source=row["source"],
             )
 
@@ -136,7 +136,7 @@ class Dataset:
                 lemma TEXT NOT NULL,
                 text TEXT NOT NULL,
                 tokens TEXT NOT NULL,
-                wn_key TEXT NOT NULL,
+                synset TEXT NOT NULL,
                 source TEXT NOT NULL
             )
             """
@@ -144,7 +144,7 @@ class Dataset:
         self._conn.execute(
             f"""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_unique
-            ON {self.TABLE_NAME} (lemma, text, wn_key)
+            ON {self.TABLE_NAME} (lemma, text, synset)
             """
         )
         self._conn.commit()
