@@ -90,11 +90,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     print("=" * 80)
     print("ALL ROWS (lemma, label, text[:100])")
     print("=" * 80)
-    display_df = df[["lemma", "label", "text"]].copy()
+    display_df = df[["lemma", "label", "text"]][:100].copy()
     display_df["text"] = display_df["text"].str.slice(0, 100)
-    pd.set_option("display.max_rows", 100)
-    pd.set_option("display.width", None)
-    pd.set_option("display.max_colwidth", 100)
     print(display_df.to_string(index=False))
     print()
 
