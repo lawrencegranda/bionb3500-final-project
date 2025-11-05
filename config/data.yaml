@@ -1,7 +1,9 @@
-raw_data_path: data/raw/semcor.xml
+raw_data_path: data/raw/omsti.xml
 
 words_config_path: config/words.yaml
 
 sense_map_path: results/senses/sense_map.json
 
-max_sentences: 500
+dataset_path: data/dataset.db
+
+max_sentences: 300
