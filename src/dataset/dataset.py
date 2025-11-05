@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
-from dataclasses import dataclass
 from pathlib import Path
 from typing import (
     Iterator,
@@ -31,15 +30,17 @@ class Dataset:
         self._ensure_schema()
 
     @classmethod
-    def build_from_sense_map(
+    def build_from_sentences(
         cls,
         db_path: str | Path,
+        sentences: Sequence[SentenceRecord],
         overwrite: bool = True,
     ) -> "Dataset":
         """Create a new dataset.
 
         Args:
             db_path: Where to persist the SQLite database.
+            sentences: The sentences to insert into the dataset.
             overwrite: If true, existing databases at ``db_path`` are removed before
                 building the dataset.
         """
@@ -52,6 +53,11 @@ class Dataset:
         # Connect to the database and create the dataset.
         connection = sqlite3.connect(path)
         dataset = cls(connection)
+
+        # Insert the sentences into the dataset.
+        for sentence in sentences:
+            dataset.insert_record(sentence)
+        dataset._conn.commit()
 
         return dataset
 
