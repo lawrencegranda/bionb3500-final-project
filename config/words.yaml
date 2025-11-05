@@ -11,4 +11,3 @@ targets:
     senses:
       music: ["sound"]
       sports: ["throw", "baseball", "ball"]
-      sales: ["speech", "promotion"]
