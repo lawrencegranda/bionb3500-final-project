@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import logging
 import sys
 from pathlib import Path
 from typing import Iterable, List, Sequence
+import logging
 
 import yaml
 
@@ -26,25 +26,32 @@ logger = logging.getLogger("SaveCorpora")
 
 
 def _collect_sentences(
+    wn_key_type: str,
     corpus_paths: Sequence[Path],
     sense_map: SenseMap,
     max_sentences: int | None,
 ) -> List[SentenceRecord]:
+    """Collect sentences from corpora and convert them to ``SentenceRecord`` objects."""
+    # Create a single Corpora object with the entire sense map
+    corpora = Corpora(wn_key_type, corpus_paths, sense_map)
+
     records: List[SentenceRecord] = []
 
-    for lemma, label_map in sense_map.sense_map.items():
-        senses = set().union(*label_map.values()) if label_map else set()
-        if not senses:
-            logger.info("No senses defined for lemma %s; skipping", lemma)
-            continue
+    # Collect sentences organized by lemma and label
+    for lemma, label_to_sentences in corpora.sentences.items():
+        for label, sentence_list in label_to_sentences.items():
+            # Apply max_sentences limit per label if specified
+            limited_sentences = sentence_list
+            if max_sentences is not None:
+                limited_sentences = sentence_list[:max_sentences]
 
-        corpora = Corpora(corpus_paths, lemma, senses)
-        lemma_records = list(corpora)
-        if max_sentences is not None:
-            lemma_records = lemma_records[:max_sentences]
-
-        logger.info("Collected %d sentences for lemma %s", len(lemma_records), lemma)
-        records.extend(lemma_records)
+            logger.info(
+                "Collected %d sentences for lemma %s, label %s",
+                len(limited_sentences),
+                lemma,
+                label,
+            )
+            records.extend(limited_sentences)
 
     return records
 
@@ -69,7 +76,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     with args.data_config_path.open("r", encoding="utf-8") as handle:
         data_config = yaml.safe_load(handle) or {}
 
-    raw_data_entry = Path(data_config.get("raw_data_path"))
+    wn_key_type = data_config.get("wn_key_type")
+    corpora_paths = [Path(path) for path in data_config.get("corpora_paths")]
     sense_map_path = Path(data_config.get("sense_map_path"))
     dataset_path = Path(data_config.get("dataset_path"))
     max_sentences = int(data_config.get("max_sentences"))
@@ -78,7 +86,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         sense_map_payload = json.load(handle)
     sense_map = SenseMap.from_dict(sense_map_payload)
 
-    collected = _collect_sentences([raw_data_entry], sense_map, max_sentences)
+    collected = _collect_sentences(wn_key_type, corpora_paths, sense_map, max_sentences)
 
     Dataset.from_sentences(dataset_path, collected)
     logger.info("Persisted %d sentences to %s", len(collected), dataset_path)
