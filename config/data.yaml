@@ -3,7 +3,7 @@ wn_key_type: wn30_key
 
 # List of paths to raw XML data files to process
 corpora_paths:
-  - data/raw/omsti.xml # Open Multilingual Word Sense Tagged Instances
+  # - data/raw/omsti.xml # Open Multilingual Word Sense Tagged Instances
   - data/raw/semcor.xml # SemCor corpus
   - data/raw/wngt.xml # WordNet Gloss Tagged corpus
 
