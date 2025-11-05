@@ -78,7 +78,7 @@ class Dataset:
             f"""
             INSERT OR IGNORE INTO {self.TABLE_NAME}
             (lemma, text, wn_key, tokens, source)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
                 record.lemma,

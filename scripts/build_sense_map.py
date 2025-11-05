@@ -16,18 +16,16 @@ import logging
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SRC_ROOT = REPO_ROOT / "src"
-if str(SRC_ROOT) not in sys.path:
-    sys.path.insert(0, str(SRC_ROOT))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-
-from utils.senses import (  # pylint: disable=C0413,E0401
+from src.utils.senses import (  # pylint: disable=C0413
     GlossMapType,
     SenseMap,
 )
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("BuildSenseMap")
 
 
 def load_gloss_map(words_path: Path) -> GlossMapType:
