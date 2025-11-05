@@ -1,4 +1,4 @@
-"""Utilities to map glosses/labels to candidate WordNet sense keys for a given word."""
+"""Utilities to map glosses/labels to candidate wordNet sense keys for a given lemma."""
 
 from dataclasses import dataclass
 from collections import defaultdict
@@ -17,11 +17,11 @@ SenseMapType: TypeAlias = Dict[str, Dict[str, Set[SenseType]]]
 GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
 
 
-def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[SenseType]:
+def _synsets_by_glosses(lemma: str, gloss_set: Set[str]) -> Set[SenseType]:
     """
     Pick a synset for a lemma by a set of substrings in its definition.
 
-    - `word`: the target lemma.
+    - `lemma`: the target lemma.
     - `gloss_set`: the set of substrings in the definition to match.
 
     Returns:
@@ -29,20 +29,20 @@ def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[SenseType]:
     """
     synsets = set()
 
-    for ss in wn.synsets(word, pos=wn.NOUN):
+    for ss in wn.synsets(lemma, pos=wn.NOUN):
         for gloss in gloss_set:
             if gloss in ss.definition().lower():
                 synsets.add(ss)
 
     if not synsets:
-        raise LookupError(f"No synset for {word} containing: {gloss_set!r}")
+        raise LookupError(f"No synset for {lemma} containing: {gloss_set!r}")
 
     return synsets
 
 
 @dataclass(init=False, slots=True)
 class SenseMap:
-    """Wrapper around a ``word -> label -> synset`` mapping."""
+    """Wrapper around a ``lemma -> label -> synset`` mapping."""
 
     _sense_map: SenseMapType
 
@@ -54,9 +54,9 @@ class SenseMap:
         """Build a ``SenseMap`` from a ``GlossMap`` definition."""
         result: SenseMapType = defaultdict(lambda: defaultdict(set))
 
-        for word, label_to_gloss in gloss_map.items():
+        for lemma, label_to_gloss in gloss_map.items():
             for label, gloss_set in label_to_gloss.items():
-                result[word][label] = _synsets_by_glosses(word, gloss_set)
+                result[lemma][label] = _synsets_by_glosses(lemma, gloss_set)
 
         return cls(result)
 
@@ -65,10 +65,10 @@ class SenseMap:
         """Build a ``SenseMap`` from a serialisable mapping of synset names."""
         result: SenseMapType = defaultdict(lambda: defaultdict(set))
 
-        for word, label_to_names in serialisable.items():
+        for lemma, label_to_names in serialisable.items():
             for label, synset_names in label_to_names.items():
                 synsets = set(wn.synset(s) for s in synset_names)
-                result[word][label] = synsets
+                result[lemma][label] = synsets
 
         return cls(result)
 
@@ -79,25 +79,25 @@ class SenseMap:
 
     def synset_to_label(self, syn: SenseType) -> Optional[Tuple[str, str]]:
         """
-        Return the word and label for a synset in the sense map.
+        Return the lemma and label for a synset in the sense map.
 
         - `syn`: the synset to look up.
 
         Returns:
-            Optional[Tuple[str, str]]: the word and label for the synset, or None if not found.
+            Optional[Tuple[str, str]]: the lemma and label for the synset, or None if not found.
         """
-        for word, label_to_synsets in self._sense_map.items():
+        for lemma, label_to_synsets in self._sense_map.items():
             for label, synsets in label_to_synsets.items():
                 if syn in synsets:
-                    return (word, label)
+                    return (lemma, label)
         return None
 
     def to_json(self) -> Dict[str, Dict[str, Sequence[str]]]:
         """Convert the SenseMap of synsets into JSON-serialisable synset names."""
         serialisable: Dict[str, Dict[str, Sequence[str]]] = {}
-        for word, label_to_synsets in self._sense_map.items():
-            serialisable[word] = {}
+        for lemma, label_to_synsets in self._sense_map.items():
+            serialisable[lemma] = {}
             for label, synsets in label_to_synsets.items():
                 keys = [synset.name() for synset in synsets]
-                serialisable[word][label] = sorted(set(keys))
+                serialisable[lemma][label] = sorted(set(keys))
         return serialisable
