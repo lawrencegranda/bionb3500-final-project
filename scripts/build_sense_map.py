@@ -11,8 +11,9 @@ import json
 import sys
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
-import yaml
 import logging
+
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -82,7 +83,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     with open(args.data_config_path, "r", encoding="utf-8") as handle:
         data_config = yaml.safe_load(handle)
 
-    words_config_path = Path(data_config.get("words_config_path"))
+    words_config_path = Path(data_config.get("target_words_path"))
     sense_map_path = Path(data_config.get("sense_map_path"))
 
     gloss_map = load_gloss_map(words_config_path)
