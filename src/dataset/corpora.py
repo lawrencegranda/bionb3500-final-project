@@ -10,6 +10,7 @@ from typing import Iterator, Set, Tuple, Sequence
 from pathlib import Path
 from xml.etree import ElementTree as ET
 from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
+from nltk.corpus.reader.wordnet import WordNetError  # pylint: disable=E0401
 
 from src.utils import SenseType, SentenceRecord
 
@@ -77,8 +78,16 @@ def _process_sentence(
         words.append(text)
 
         # Add the sense key to the list of sense keys
-        wn_key: str = word.attrib.get("wn_key", "")
-        synset: SenseType = wn.synset_from_sense_key(wn_key)
+        wn_key: str = word.attrib.get("wn30_key", "")
+        if not wn_key:
+            continue
+        wn_key = wn_key.split(";")[0]
+
+        try:
+            synset: SenseType = wn.synset_from_sense_key(wn_key)
+        except WordNetError:
+            continue
+
         if text == lemma and synset in senses:
             synsets_found.append(synset)
 
