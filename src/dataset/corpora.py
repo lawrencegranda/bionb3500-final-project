@@ -167,6 +167,7 @@ def _load_sentences(
                         SentenceRecord(
                             lemma=lemma,
                             text=text,
+                            label=label,
                             synset=synset.name(),
                             source=path.name,
                         )
