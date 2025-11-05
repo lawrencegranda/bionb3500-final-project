@@ -8,74 +8,22 @@ import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
-    Dict,
     Iterator,
     Optional,
     Set,
+    Tuple,
+    Sequence,
 )
 
-from src.utils import SenseMapType, SenseType, SentenceRecord
+from src.utils import SenseType, SentenceRecord
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(slots=True)
-class _AnnotatedToken:
-    surface: str
-    lemma: Optional[str]
-    sense_key: Optional[str]
-    synset_name: Optional[str]
-
-
-@dataclass(frozen=True, slots=True)
-class _TargetEntry:
-    lemma: str
-    label: str
-    synset_name: str
-    sense_keys: Set[str]
-
-
-def _normalise_lemma(value: str | None) -> str:
-    """Normalise a lemma by replacing underscores with spaces and converting to lowercase."""
-    return "" if value is None else value.replace("_", " ").strip().lower()
-
-
-def _sense_keys_for_target(synset: SenseType, lemma: str) -> Set[str]:
-    """Get the sense keys for a target lemma in a synset."""
-    lemma_norm = _normalise_lemma(lemma)
-    sense_keys: Set[str] = set()
-    for lemma_obj in synset.lemmas():
-        lemma_name_norm = _normalise_lemma(lemma_obj.name())
-        if lemma_name_norm == lemma_norm:
-            sense_keys.add(lemma_obj.key())
-    if not sense_keys:
-        # Fall back to all lemma keys for the synset if the explicit lemma was not found.
-        sense_keys = {lemma_obj.key() for lemma_obj in synset.lemmas()}
-    return sense_keys
-
-
-def _build_target_index(sense_map: SenseMapType) -> Dict[str, _TargetEntry]:
-    """Build an index of target entries from a sense map."""
-    index: Dict[str, _TargetEntry] = {}
-    for lemma, label_to_synsets in sense_map.items():
-        for label, synsets in label_to_synsets.items():
-            for synset in synsets:
-                synset_name = synset.name()
-                sense_keys = _sense_keys_for_target(synset, lemma)
-                index[synset_name] = _TargetEntry(
-                    lemma=lemma,
-                    label=label,
-                    synset_name=synset_name,
-                    sense_keys=sense_keys,
-                )
-    return index
 
 
 class Dataset:
     """SQLite-backed collection of SemCor-UFSAC sentences filtered by a ``SenseMap``."""
 
-    TABLE_NAME = "semcor_sentences"
-    SOURCE = "semcor_ufsac"
+    TABLE_NAME = "sentences"
 
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._conn = connection
@@ -114,6 +62,87 @@ class Dataset:
         connection = sqlite3.connect(Path(db_path))
         return cls(connection)
 
+    def insert_record(self, record: SentenceRecord) -> None:
+        """Insert a ``SentenceRecord`` into the dataset, ignoring duplicates."""
+
+        tokens_json: str = json.dumps(list(record.tokens))
+
+        # Insert the record into the database, ignoring duplicates.
+        self._conn.execute(
+            f"""
+            INSERT OR IGNORE INTO {self.TABLE_NAME}
+            (lemma, text, wn_key, tokens, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                record.lemma,
+                record.text,
+                record.wn_key,
+                tokens_json,
+                record.source,
+            ),
+        )
+
+    def iter_records(
+        self,
+        lemma: Optional[str] = None,
+        senses: Optional[Set[SenseType]] = None,
+    ) -> Iterator[SentenceRecord]:
+        """Yield ``SentenceRecord`` instances stored in the dataset."""
+
+        # Fetch all records from the dataset
+        query = f"SELECT lemma, text, wn_key, tokens, source FROM {self.TABLE_NAME}"
+
+        params: Tuple[str, ...] = ()
+
+        # Filter by lemma if provided
+        if lemma is not None:
+            query += " WHERE lemma = ?"
+            params = (lemma,)
+
+        # Filter by senses if provided
+        if senses is not None and len(senses) > 0:
+            query += (
+                " WHERE wn_key IN (SELECT wn_key FROM senses WHERE sense_key IN (?))"
+            )
+            params += tuple(s.name() for s in senses)
+
+        # Execute the query and yield the records
+        cursor = self._conn.execute(query, params)
+        for row in cursor:
+            # Load the tokens from the database
+            tokens: Sequence[str] = json.loads(row["tokens"])
+
+            # Yield the record
+            yield SentenceRecord(
+                lemma=row["lemma"],
+                text=row["text"],
+                tokens=tokens,
+                synset=row["wn_key"],
+                source=row["source"],
+            )
+
+    def _ensure_schema(self) -> None:
+        self._conn.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lemma TEXT NOT NULL,
+                text TEXT NOT NULL,
+                tokens TEXT NOT NULL,
+                wn_key TEXT NOT NULL,
+                source TEXT NOT NULL
+            )
+            """
+        )
+        self._conn.execute(
+            f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_unique
+            ON {self.TABLE_NAME} (lemma, text, wn_key)
+            """
+        )
+        self._conn.commit()
+
     def close(self) -> None:
         """Close the underlying SQLite connection."""
 
@@ -137,81 +166,5 @@ class Dataset:
 
         return int(row[0]) if row else 0
 
-    def insert_record(self, record: SentenceRecord, synset_name: str) -> None:
-        """Insert a ``SentenceRecord`` into the dataset, ignoring duplicates."""
-
-        tokens_json = json.dumps(list(record.tokens))
-
-        # Insert the record into the database, ignoring duplicates.
-        self._conn.execute(
-            f"""
-            INSERT OR IGNORE INTO {self.TABLE_NAME}
-            (lemma, sense_label, wn_key, synset_name, sentence, tokens, source)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            (
-                record.lemma,
-                record.sense_label,
-                record.wn_key,
-                synset_name,
-                record.text,
-                tokens_json,
-                record.source,
-            ),
-        )
-
-    def iter_records(
-        self,
-        *,
-        lemma: Optional[str] = None,
-        sense_label: Optional[str] = None,
-    ) -> Iterator[SentenceRecord]:
-        """Yield ``SentenceRecord`` instances stored in the dataset."""
-
-        conditions = []
-        params: list[str] = []
-        if lemma is not None:
-            conditions.append("lemma = ?")
-            params.append(lemma)
-        if sense_label is not None:
-            conditions.append("sense_label = ?")
-            params.append(sense_label)
-
-        query = f"SELECT lemma, sense_label, wn_key, sentence, tokens, source FROM {self.TABLE_NAME}"
-        if conditions:
-            query += " WHERE " + " AND ".join(conditions)
-
-        cursor = self._conn.execute(query, params)
-        for row in cursor:
-            tokens = json.loads(row["tokens"])
-            yield SentenceRecord(
-                lemma=row["lemma"],
-                text=row["sentence"],
-                tokens=tuple(tokens),
-                wn_key=row["wn_key"],
-                sense_label=row["sense_label"],
-                source=row["source"],
-            )
-
-    def _ensure_schema(self) -> None:
-        self._conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lemma TEXT NOT NULL,
-                sense_label TEXT NOT NULL,
-                wn_key TEXT NOT NULL,
-                synset_name TEXT NOT NULL,
-                sentence TEXT NOT NULL,
-                tokens TEXT NOT NULL,
-                source TEXT NOT NULL
-            )
-            """
-        )
-        self._conn.execute(
-            f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_unique
-            ON {self.TABLE_NAME} (lemma, sense_label, wn_key, sentence)
-            """
-        )
-        self._conn.commit()
+    def __iter__(self) -> Iterator[SentenceRecord]:
+        return self.iter_records()
