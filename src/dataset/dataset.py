@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import json
-import logging
 import sqlite3
 from pathlib import Path
 from typing import (
@@ -13,6 +11,7 @@ from typing import (
     Tuple,
     Sequence,
 )
+import logging
 
 from src.utils import SenseType, SentenceRecord
 
@@ -71,20 +70,17 @@ class Dataset:
     def insert_record(self, record: SentenceRecord) -> None:
         """Insert a ``SentenceRecord`` into the dataset, ignoring duplicates."""
 
-        tokens_json: str = json.dumps(list(record.tokens))
-
         # Insert the record into the database, ignoring duplicates.
         self._conn.execute(
             f"""
             INSERT OR IGNORE INTO {self.TABLE_NAME}
-            (lemma, text, synset, tokens, source)
+            (lemma, text, synset, source)
             VALUES (?, ?, ?, ?, ?)
             """,
             (
                 record.lemma,
                 record.text,
                 record.synset,
-                tokens_json,
                 record.source,
             ),
         )
@@ -97,7 +93,7 @@ class Dataset:
         """Yield ``SentenceRecord`` instances stored in the dataset."""
 
         # Fetch all records from the dataset
-        query = f"SELECT lemma, text, synset, tokens, source FROM {self.TABLE_NAME}"
+        query = f"SELECT lemma, text, synset, source FROM {self.TABLE_NAME}"
 
         params: Tuple[str, ...] = ()
 
@@ -116,14 +112,10 @@ class Dataset:
         # Execute the query and yield the records
         cursor = self._conn.execute(query, params)
         for row in cursor:
-            # Load the tokens from the database
-            tokens: Sequence[str] = json.loads(row["tokens"])
-
             # Yield the record
             yield SentenceRecord(
                 lemma=row["lemma"],
                 text=row["text"],
-                tokens=tokens,
                 synset=row["synset"],
                 source=row["source"],
             )
@@ -135,7 +127,6 @@ class Dataset:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 lemma TEXT NOT NULL,
                 text TEXT NOT NULL,
-                tokens TEXT NOT NULL,
                 synset TEXT NOT NULL,
                 source TEXT NOT NULL
             )
