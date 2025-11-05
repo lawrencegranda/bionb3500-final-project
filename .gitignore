@@ -12,3 +12,4 @@
 *.synctex*
 .specstory/
 __pycache__/
+data/raw
