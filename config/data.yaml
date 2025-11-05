@@ -1,9 +1,20 @@
-raw_data_path: data/raw/omsti.xml
+# Type of WordNet key to use for annotations (e.g., wn16_key, wn30_key)
+wn_key_type: wn30_key
 
-words_config_path: config/words.yaml
+# List of paths to raw XML data files to process
+corpora_paths:
+  - data/raw/omsti.xml # Open Multilingual Word Sense Tagged Instances
+  - data/raw/semcor.xml # SemCor corpus
+  - data/raw/wngt.xml # WordNet Gloss Tagged corpus
 
+# Path to the YAML configuration file specifying words of interest
+target_words_path: config/words.yaml
+
+# Path where the resulting sense mapping will be stored
 sense_map_path: results/senses/sense_map.json
 
+# Path to the generated dataset (e.g., SQLite database)
 dataset_path: data/dataset.db
 
-max_sentences: 300
+# Maximum number of sentences to collect for each lemma
+max_sentences: 1000
