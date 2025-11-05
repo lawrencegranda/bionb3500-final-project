@@ -6,7 +6,6 @@ from .sentences import (
     SentenceRecord,
 )
 from .senses import (
-    SenseDefinition,
     SenseMap,
     SenseMapType,
     GlossMapType,
@@ -16,7 +15,6 @@ from .senses import (
 __all__ = [
     "clean_sentence",
     "is_valid_sentence",
-    "SenseDefinition",
     "SentenceRecord",
     "SenseMap",
     "SenseMapType",

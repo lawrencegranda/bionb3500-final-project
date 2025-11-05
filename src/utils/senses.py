@@ -17,14 +17,6 @@ SenseMapType: TypeAlias = Dict[str, Dict[str, Set[SenseType]]]
 GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
 
 
-@dataclass(frozen=True)
-class SenseDefinition:
-    """Canonical information for a sense of a given lemma."""
-
-    label: str
-    wn_key: str
-
-
 def _synsets_by_glosses(word: str, gloss_set: Set[str]) -> Set[SenseType]:
     """
     Pick a synset for a lemma by a set of substrings in its definition.
