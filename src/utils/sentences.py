@@ -11,18 +11,11 @@ _VALID_SENTENCE_PATTERN = re.compile(r"^(?!\\s)([a-z0-9]+)(\\s[a-z0-9]+){0,18}$"
 class SentenceRecord:
     """Normalized representation of a cleaned and labeled sentence."""
 
-    lemma: str
-    text: str
-    tokens: Sequence[str]
-    wn_key: str
-    sense_label: str
-    source: str
-
-    @property
-    def split_index(self) -> int:
-        """Return the token index of the target lemma within the sentence."""
-
-        return self.tokens.index(self.lemma)
+    lemma: str  # the target lemma
+    text: str  # the cleaned sentence
+    tokens: Sequence[str]  # the tokens in the sentence
+    synset: str  # the WordNet synset of the target lemma
+    source: str  # the source of the sentence
 
 
 def clean_sentence(sentence: str) -> str:
