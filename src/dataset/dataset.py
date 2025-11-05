@@ -12,6 +12,7 @@ from typing import (
     Sequence,
 )
 import logging
+import pandas as pd  # pylint: disable=E0401
 
 from src.utils import SenseType, SentenceRecord
 
@@ -74,12 +75,13 @@ class Dataset:
         self._conn.execute(
             f"""
             INSERT OR IGNORE INTO {self.TABLE_NAME}
-            (lemma, text, synset, source)
-            VALUES (?, ?, ?, ?)
+            (lemma, text, label, synset, source)
+            VALUES (?, ?, ?, ?, ?)
             """,
             (
                 record.lemma,
                 record.text,
+                record.label,
                 record.synset,
                 record.source,
             ),
@@ -93,7 +95,7 @@ class Dataset:
         """Yield ``SentenceRecord`` instances stored in the dataset."""
 
         # Fetch all records from the dataset
-        query = f"SELECT lemma, text, synset, source FROM {self.TABLE_NAME}"
+        query = f"SELECT lemma, text, label, synset, source FROM {self.TABLE_NAME}"
 
         params: Tuple[str, ...] = ()
 
@@ -116,6 +118,7 @@ class Dataset:
             yield SentenceRecord(
                 lemma=row["lemma"],
                 text=row["text"],
+                label=row["label"],
                 synset=row["synset"],
                 source=row["source"],
             )
@@ -127,6 +130,7 @@ class Dataset:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 lemma TEXT NOT NULL,
                 text TEXT NOT NULL,
+                label TEXT NOT NULL,
                 synset TEXT NOT NULL,
                 source TEXT NOT NULL
             )
@@ -135,10 +139,16 @@ class Dataset:
         self._conn.execute(
             f"""
             CREATE UNIQUE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_unique
-            ON {self.TABLE_NAME} (lemma, text, synset)
+            ON {self.TABLE_NAME} (lemma, text, label, synset)
             """
         )
         self._conn.commit()
+
+    def to_df(self) -> "pd.DataFrame":
+        """Convert the dataset to a pandas DataFrame."""
+
+        query = f"SELECT * FROM {self.TABLE_NAME}"
+        return pd.read_sql_query(query, self._conn)
 
     def close(self) -> None:
         """Close the underlying SQLite connection."""
