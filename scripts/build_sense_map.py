@@ -12,6 +12,8 @@ import sys
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
 import yaml
+import logging
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = REPO_ROOT / "src"
@@ -23,6 +25,9 @@ from utils.senses import (  # pylint: disable=C0413,E0401
     GlossMapType,
     SenseMap,
 )
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def load_gloss_map(words_path: Path) -> GlossMapType:
@@ -62,16 +67,11 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         description="Build a WordNet sense map from gloss substrings."
     )
     parser.add_argument(
-        "--words",
+        "-d",
+        "--data-config-path",
         type=Path,
-        default=REPO_ROOT / "config" / "words.yaml",
-        help="Path to the YAML configuration containing gloss substrings.",
-    )
-    parser.add_argument(
-        "--output",
-        type=Path,
-        default=REPO_ROOT / "results" / "senses" / "sense_map.json",
-        help="Path to the JSON file that will store the generated sense map.",
+        required=True,
+        help="Path to the YAML configuration containing data configuration.",
     )
     return parser.parse_args(argv)
 
@@ -80,15 +80,22 @@ def main(argv: Iterable[str] | None = None) -> None:
     """Program entrypoint."""
 
     args = _parse_args(argv)
-    gloss_map = load_gloss_map(args.words)
+
+    with open(args.data_config_path, "r", encoding="utf-8") as handle:
+        data_config = yaml.safe_load(handle)
+
+    words_config_path = Path(data_config.get("words_config_path"))
+    sense_map_path = Path(data_config.get("sense_map_path"))
+
+    gloss_map = load_gloss_map(words_config_path)
     if not gloss_map:
-        raise ValueError(f"No targets found in {args.words}")
+        raise ValueError(f"No targets found in {words_config_path}")
 
     sense_map = SenseMap.from_gloss(gloss_map)
     writable = sense_map.to_json()
-    _write_json(writable, args.output)
+    _write_json(writable, sense_map_path)
 
-    print(f"Sense map written to {args.output}")
+    logger.info("Sense map written to %s", sense_map_path)
 
 
 if __name__ == "__main__":

@@ -30,7 +30,7 @@ class Dataset:
         self._ensure_schema()
 
     @classmethod
-    def build_from_sentences(
+    def from_sentences(
         cls,
         db_path: str | Path,
         sentences: Sequence[SentenceRecord],
