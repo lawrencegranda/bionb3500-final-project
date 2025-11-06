@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import pandas as pd  # pylint: disable=E0401
 import torch  # pylint: disable=E0401
 from transformers import BertTokenizer, BertModel  # pylint: disable=E0401
 
@@ -46,6 +47,12 @@ class EmbeddingStore:
         """Load an existing database and attach embedding store."""
         connection = sqlite3.connect(Path(db_path))
         return cls(connection, model_name)
+
+    def to_df(self) -> "pd.DataFrame":
+        """Convert the dataset to a pandas DataFrame."""
+
+        query = f"SELECT * FROM {self.TABLE_NAME}"
+        return pd.read_sql_query(query, self._conn)
 
     def _ensure_schema(self) -> None:
         """Create the embeddings table if it doesn't exist."""
