@@ -52,44 +52,44 @@ def main(argv: Iterable[str] | None = None) -> None:
     dataset.close()
 
     # Print overall statistics
-    print("=" * 80)
+    print("=" * 100)
     print("DATASET SUMMARY")
-    print("=" * 80)
+    print("=" * 100)
     print(f"Database path: {dataset_path}")
     print(f"Total rows: {len(df)}")
     print()
 
     # Print statistics by label
-    print("-" * 80)
+    print("-" * 100)
     print("STATISTICS BY LABEL")
-    print("-" * 80)
+    print("-" * 100)
     label_counts = df.groupby(["lemma", "label"]).size().sort_values(ascending=False)
     for (lemma, label), count in label_counts.items():
         print(f"  {lemma} ({label}): {count} sentences")
     print()
 
     # Print statistics by synset
-    print("-" * 80)
+    print("-" * 100)
     print("STATISTICS BY SYNSET")
-    print("-" * 80)
+    print("-" * 100)
     synset_counts = df.groupby(["lemma", "synset"]).size().sort_values(ascending=False)
     for (lemma, synset), count in synset_counts.items():
         print(f"  {lemma} ({synset}): {count} sentences")
     print()
 
     # Print statistics by source
-    print("-" * 80)
+    print("-" * 100)
     print("STATISTICS BY SOURCE")
-    print("-" * 80)
+    print("-" * 100)
     source_counts = df.groupby("source").size().sort_values(ascending=False)
     for source, count in source_counts.items():
         print(f"  {source}: {count} sentences")
     print()
 
     # Print selected columns (lemma, label, first 100 chars of text)
-    print("=" * 80)
+    print("=" * 100)
     print("SAMPLE SENTENCES (lemma, label, text[:100])")
-    print("=" * 80)
+    print("=" * 100)
     display_df = df[["lemma", "label", "text"]][:20].copy()
     display_df["text"] = display_df["text"].str.slice(0, 100)
     print(display_df.to_string(index=False))
@@ -99,9 +99,9 @@ def main(argv: Iterable[str] | None = None) -> None:
     embeddings_df = embedding_store.to_df()
 
     if len(embeddings_df) > 0:
-        print("=" * 80)
+        print("=" * 100)
         print("EMBEDDINGS SUMMARY")
-        print("=" * 80)
+        print("=" * 100)
         print(f"Total embeddings: {len(embeddings_df)}")
         print(
             f"Unique sentences with embeddings: {embeddings_df['sentence_id'].nunique()}"
@@ -111,9 +111,9 @@ def main(argv: Iterable[str] | None = None) -> None:
         print()
 
         # Join with sentences to get lemma and label
-        print("-" * 80)
+        print("-" * 100)
         print("EMBEDDINGS TABLE (first 20 rows)")
-        print("-" * 80)
+        print("-" * 100)
         merged_df = embeddings_df.merge(
             df[["lemma", "label"]],
             left_on="sentence_id",
@@ -128,18 +128,18 @@ def main(argv: Iterable[str] | None = None) -> None:
         print()
 
         # Statistics by layer
-        print("-" * 80)
+        print("-" * 100)
         print("EMBEDDINGS BY LAYER")
-        print("-" * 80)
+        print("-" * 100)
         layer_counts = embeddings_df.groupby("layer").size().sort_index()
         for layer, count in layer_counts.items():
             print(f"  Layer {layer}: {count} embeddings")
         print()
 
         # Mean and std dev per label for each layer
-        print("=" * 80)
+        print("=" * 100)
         print("MEAN EMBEDDING ANALYSIS PER LABEL AND LAYER")
-        print("=" * 80)
+        print("=" * 100)
 
         # Convert embeddings from BLOB to numpy arrays
         merged_df["embedding_array"] = merged_df["embedding"].apply(
@@ -149,7 +149,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         # Group by label and layer
         for label in sorted(merged_df["label"].dropna().unique()):
             print(f"\nLabel: {label}")
-            print("-" * 80)
+            print("-" * 100)
 
             label_df = merged_df[merged_df["label"] == label]
 
@@ -184,9 +184,9 @@ def main(argv: Iterable[str] | None = None) -> None:
                 )
 
         print()
-        print("=" * 80)
+        print("=" * 100)
         print("SUMMARY STATISTICS PER LAYER (ALL LABELS)")
-        print("=" * 80)
+        print("=" * 100)
 
         for layer in sorted(merged_df["layer"].unique()):
             layer_embeddings = merged_df[merged_df["layer"] == layer]["embedding_array"]
@@ -216,15 +216,15 @@ def main(argv: Iterable[str] | None = None) -> None:
 
         print()
     else:
-        print("=" * 80)
+        print("=" * 100)
         print("No embeddings found in database")
-        print("=" * 80)
+        print("=" * 100)
         print()
     embedding_store.close()
 
-    print("=" * 80)
+    print("=" * 100)
     print("END OF SUMMARY")
-    print("=" * 80)
+    print("=" * 100)
 
 
 if __name__ == "__main__":  # pragma: no cover
