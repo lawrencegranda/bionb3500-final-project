@@ -17,7 +17,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-from src.dataset import Corpora, Dataset  # pylint: disable=C0413
+from src.dataset import Corpora, SentencesTable  # pylint: disable=C0413
 from src.utils import SenseMap, SentenceRecord  # pylint: disable=C0413
 
 
@@ -88,7 +88,7 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     collected = _collect_sentences(wn_key_type, corpora_paths, sense_map, max_sentences)
 
-    Dataset.from_sentences(dataset_path, collected)
+    SentencesTable.from_sentences(dataset_path, collected)
     logger.info("Persisted %d sentences to %s", len(collected), dataset_path)
 
 

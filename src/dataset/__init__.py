@@ -1,7 +1,9 @@
-from .dataset import Dataset
+from .embeddings_table import EmbeddingsTable
+from .sentences_table import SentencesTable
 from .corpora import Corpora
 
 __all__ = [
-    "Dataset",
+    "EmbeddingsTable",
+    "SentencesTable",
     "Corpora",
 ]

@@ -15,8 +15,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-from src.dataset import Dataset  # pylint: disable=C0413
-from src.embeddings import EmbeddingStore  # pylint: disable=C0413
+from src.dataset import SentencesTable, EmbeddingsTable  # pylint: disable=C0413
 
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -47,7 +46,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         sys.exit(1)
 
     # Load the dataset and convert to pandas DataFrame
-    dataset = Dataset.from_db(dataset_path)
+    dataset = SentencesTable.from_db(dataset_path)
     df = dataset.to_df()
     dataset.close()
 
@@ -95,8 +94,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     print(display_df.to_string(index=False))
     print()
 
-    embedding_store = EmbeddingStore.from_db(dataset_path)
-    embeddings_df = embedding_store.to_df()
+    embeddings_table = EmbeddingsTable.from_db(dataset_path)
+    embeddings_df = embeddings_table.to_df()
 
     if len(embeddings_df) > 0:
         print("=" * 100)
@@ -222,7 +221,8 @@ def main(argv: Iterable[str] | None = None) -> None:
         print("No embeddings found in database")
         print("=" * 100)
         print()
-    embedding_store.close()
+
+    embeddings_table.close()
 
     print("=" * 100)
     print("END OF SUMMARY")

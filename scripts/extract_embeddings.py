@@ -12,8 +12,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-from src.embeddings import EmbeddingStore  # pylint: disable=C0413
-from src.dataset import Dataset  # pylint: disable=C0413
+from src.dataset import EmbeddingsTable, SentencesTable  # pylint: disable=C0413
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ExtractEmbeddings")
@@ -56,10 +55,10 @@ def main():
         return
 
     logger.info("Loading dataset from %s", db_path)
-    dataset = Dataset.from_db(db_path)
+    sentences_table = SentencesTable.from_db(db_path)
 
     logger.info("Initializing BERT model: %s", args.model)
-    with EmbeddingStore.from_db(db_path, model_name=args.model) as store:
+    with EmbeddingsTable.from_db(db_path, model_name=args.model) as store:
         logger.info("Extracting embeddings up to layer %d", args.layer)
         store.process_dataset(dataset, layer=args.layer)
 
