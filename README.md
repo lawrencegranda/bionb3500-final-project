@@ -26,7 +26,22 @@ python scripts/build_sense_map.py
 python scripts/save_corpora.py
 ```
 
-### 3. Extract BERT Embeddings
+### 3. Summarize Dataset Statistics
+
+View dataset and embedding statistics:
+
+```bash
+python scripts/summarise.py -d config/data.yaml
+```
+
+This will display:
+
+- Dataset statistics by label, synset, and source
+- Embedding counts per layer
+- Mean embedding analysis per label and layer (with mean norm and std deviation)
+- Overall embedding statistics across all labels
+
+### 4. Extract BERT Embeddings
 
 Extract embeddings for all sentences in the dataset:
 
