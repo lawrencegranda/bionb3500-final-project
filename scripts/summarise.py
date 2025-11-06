@@ -7,7 +7,6 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-import pandas as pd  # pylint: disable=E0401
 import yaml
 
 
