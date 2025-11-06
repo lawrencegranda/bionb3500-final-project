@@ -16,5 +16,8 @@ sense_map_path: results/senses/sense_map.json
 # Path to the generated dataset (e.g., SQLite database)
 dataset_path: data/dataset.db
 
+# Directory to save metrics and plots
+metrics_dir: results/metrics
+
 # Maximum number of sentences to collect for each lemma
 max_sentences: 1000
