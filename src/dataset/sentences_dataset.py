@@ -19,7 +19,7 @@ from src.utils import SenseType, SentenceRecord
 logger = logging.getLogger(__name__)
 
 
-class Dataset:
+class SentencesTable:
     """SQLite-backed collection of SemCor-UFSAC sentences filtered by a ``SenseMap``."""
 
     TABLE_NAME = "sentences"
@@ -35,7 +35,7 @@ class Dataset:
         db_path: str | Path,
         sentences: Sequence[SentenceRecord],
         overwrite: bool = True,
-    ) -> "Dataset":
+    ) -> "SentencesTable":
         """Create a new dataset.
 
         Args:
@@ -62,7 +62,7 @@ class Dataset:
         return dataset
 
     @classmethod
-    def from_db(cls, db_path: str | Path) -> "Dataset":
+    def from_db(cls, db_path: str | Path) -> "SentencesTable":
         """Load an existing SQLite-backed dataset from disk."""
 
         connection = sqlite3.connect(Path(db_path))
@@ -157,7 +157,7 @@ class Dataset:
             self._conn.commit()
             self._conn.close()
 
-    def __enter__(self) -> "Dataset":
+    def __enter__(self) -> "SentencesTable":
         return self
 
     def __exit__(self, exc_type, exc, traceback) -> None:  # type: ignore[override]
