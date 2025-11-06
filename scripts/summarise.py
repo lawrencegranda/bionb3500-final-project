@@ -146,15 +146,17 @@ def main(argv: Iterable[str] | None = None) -> None:
             lambda x: np.frombuffer(x, dtype=np.float32)
         )
 
-        # Group by label and layer
-        for label in sorted(merged_df["label"].dropna().unique()):
-            print(f"\nLabel: {label}")
+        # Group by lemma, label and layer
+        for (lemma, label), _ in sorted(merged_df.groupby(["lemma", "label"])):
+            print(f"\nLemma: {lemma}, Label: {label}")
             print("-" * 100)
 
-            label_df = merged_df[merged_df["label"] == label]
+            lemma_label_df = merged_df[
+                (merged_df["lemma"] == lemma) & (merged_df["label"] == label)
+            ]
 
-            for layer in sorted(label_df["layer"].unique()):
-                layer_embeddings = label_df[label_df["layer"] == layer][
+            for layer in sorted(lemma_label_df["layer"].unique()):
+                layer_embeddings = lemma_label_df[lemma_label_df["layer"] == layer][
                     "embedding_array"
                 ]
 
