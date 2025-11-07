@@ -37,3 +37,6 @@ class LemmaEmbeddings:
 
     lemma: str
     layers: Mapping[int, LayerEmbeddings] = field(default_factory=defaultdict)
+
+
+__all__ = ["EmbeddingRecord", "LabelEmbeddings", "LayerEmbeddings", "LemmaEmbeddings"]

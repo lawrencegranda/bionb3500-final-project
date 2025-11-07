@@ -12,4 +12,5 @@ SenseType: TypeAlias = wn.synset
 SenseMapType: TypeAlias = Dict[str, Dict[str, Set[SenseType]]]
 GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
 
+
 __all__ = ["SenseType", "SenseMapType", "GlossMapType"]
