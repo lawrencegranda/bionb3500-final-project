@@ -1,9 +1,11 @@
+"""Dataset module."""
+
+from .database import Database
 from .embeddings_table import EmbeddingsTable
 from .sentences_table import SentencesTable
-from .corpora import Corpora
 
 __all__ = [
+    "Database",
     "EmbeddingsTable",
     "SentencesTable",
-    "Corpora",
 ]
