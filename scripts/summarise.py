@@ -15,7 +15,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-from src.dataset import SentencesTable, EmbeddingsTable  # pylint: disable=C0413
+from src.dataset import Database  # pylint: disable=C0413,E0401
 
 
 def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
@@ -39,6 +39,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     with args.data_config_path.open("r", encoding="utf-8") as handle:
         data_config = yaml.safe_load(handle) or {}
 
+    model_name = data_config.get("model_name")
     dataset_path = Path(data_config.get("dataset_path"))
 
     if not dataset_path.exists():
@@ -46,9 +47,8 @@ def main(argv: Iterable[str] | None = None) -> None:
         sys.exit(1)
 
     # Load the dataset and convert to pandas DataFrame
-    dataset = SentencesTable.from_db(dataset_path)
-    df = dataset.to_df()
-    dataset.close()
+    database = Database.from_db(dataset_path, model_name)
+    df = database.sentences_table.to_df()
 
     # Print overall statistics
     print("=" * 100)
@@ -94,8 +94,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     print(display_df.to_string(index=False))
     print()
 
-    embeddings_table = EmbeddingsTable.from_db(dataset_path)
-    embeddings_df = embeddings_table.to_df()
+    embeddings_df = database.embeddings_table.to_df()
 
     if len(embeddings_df) > 0:
         print("=" * 100)
@@ -222,7 +221,7 @@ def main(argv: Iterable[str] | None = None) -> None:
         print("=" * 100)
         print()
 
-    embeddings_table.close()
+    database.close()
 
     print("=" * 100)
     print("END OF SUMMARY")

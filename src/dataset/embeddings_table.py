@@ -143,16 +143,15 @@ def _compile_embeddings(config: _EmbeddingsTableConfig) -> LemmaEmbeddings:
         """
     cursor = config.connection.execute(query)
 
-    result: Mapping[str, LemmaEmbeddings] = defaultdict(LemmaEmbeddings)
+    result: Mapping[str, LemmaEmbeddings] = {}
     for lemma, layer, label, embedding_bytes, sentence_id in cursor:
         # Build the embedding record
         embedding_record = _build_embedding_record(sentence_id, layer, embedding_bytes)
 
-        result[lemma].layers.setdefault(
-            layer, LayerEmbeddings(layer=layer)
-        ).labels.setdefault(label, LabelEmbeddings(label=label)).records.append(
-            embedding_record
-        )
+        lemma_obj = result.get(lemma, LemmaEmbeddings(lemma=lemma))
+        layer_obj = lemma_obj.layers.get(layer, LayerEmbeddings(layer=layer))
+        label_obj = layer_obj.labels.get(label, LabelEmbeddings(label=label))
+        label_obj.records.append(embedding_record)
 
     return result
 
