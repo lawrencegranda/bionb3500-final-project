@@ -7,7 +7,6 @@ import json
 import sys
 from pathlib import Path
 from typing import Iterable, List, Sequence
-import logging
 
 import yaml
 
@@ -17,12 +16,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 
-from src.dataset import Corpora, SentencesTable  # pylint: disable=C0413
-from src.utils import SenseMap, SentenceRecord  # pylint: disable=C0413
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("SaveCorpora")
+from src.builders import Corpora, SenseMap  # pylint: disable=C0413,E0401
+from src.dataset import Database  # pylint: disable=C0413,E0401
+from src.types.sentences import SentenceRecord  # pylint: disable=C0413,E0401
 
 
 def _collect_sentences(
@@ -45,7 +41,7 @@ def _collect_sentences(
             if max_sentences is not None:
                 limited_sentences = sentence_list[:max_sentences]
 
-            logger.info(
+            print(
                 "Collected %d sentences for lemma %s, label %s",
                 len(limited_sentences),
                 lemma,
@@ -81,6 +77,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     sense_map_path = Path(data_config.get("sense_map_path"))
     dataset_path = Path(data_config.get("dataset_path"))
     max_sentences = int(data_config.get("max_sentences"))
+    model_name = data_config.get("model_name")
 
     with sense_map_path.open("r", encoding="utf-8") as handle:
         sense_map_payload = json.load(handle)
@@ -88,9 +85,13 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     collected = _collect_sentences(wn_key_type, corpora_paths, sense_map, max_sentences)
 
-    SentencesTable.from_sentences(dataset_path, collected)
-    logger.info("Persisted %d sentences to %s", len(collected), dataset_path)
+    database = Database.from_db(dataset_path, model_name)
+    sentences_table = database.sentences_table
+    sentences_table.add_sentences(collected)
+    database.close()
+
+    print(f"Persisted {len(collected)} sentences to {dataset_path}")
 
 
-if __name__ == "__main__":  # pragma: no cover
+if __name__ == "__main__":
     main()

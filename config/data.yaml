@@ -21,3 +21,6 @@ metrics_dir: results/metrics
 
 # Maximum number of sentences to collect for each lemma
 max_sentences: 1000
+
+# Model name to use for embeddings
+model_name: bert-base-uncased

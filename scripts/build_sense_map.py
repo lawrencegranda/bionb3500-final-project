@@ -11,7 +11,6 @@ import json
 import sys
 from pathlib import Path
 from typing import Iterable, Mapping, Sequence
-import logging
 
 import yaml
 
@@ -22,9 +21,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.types.senses import GlossMapType  # pylint: disable=C0413,E0401
 from src.builders.sense_map import SenseMap  # pylint: disable=C0413,E0401
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("BuildSenseMap")
 
 
 def load_gloss_map(words_path: Path) -> GlossMapType:
@@ -92,7 +88,7 @@ def main(argv: Iterable[str] | None = None) -> None:
     writable = sense_map.to_json()
     _write_json(writable, sense_map_path)
 
-    logger.info("Sense map written to %s", sense_map_path)
+    print("Sense map written to %s", sense_map_path)
 
 
 if __name__ == "__main__":
