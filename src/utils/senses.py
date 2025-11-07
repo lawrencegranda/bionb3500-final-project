@@ -2,19 +2,11 @@
 
 from dataclasses import dataclass
 from collections import defaultdict
-from typing import Dict, Optional, Sequence, Set, Tuple, TypeAlias
+from typing import Dict, Optional, Sequence, Set, Tuple
 
-import nltk  # pylint: disable=E0401
+from nltk.corpus import wordnet as wn
 
-nltk.download("wordnet", quiet=True)
-nltk.download("omw-1.4", quiet=True)
-
-from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
-
-
-SenseType = wn.synset
-SenseMapType: TypeAlias = Dict[str, Dict[str, Set[SenseType]]]
-GlossMapType: TypeAlias = Dict[str, Dict[str, Set[str]]]
+from src.types.senses import SenseType, SenseMapType, GlossMapType
 
 
 def _synsets_by_glosses(lemma: str, gloss_set: Set[str]) -> Set[SenseType]:
