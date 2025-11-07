@@ -13,7 +13,10 @@ from xml.etree import ElementTree as ET
 from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
 from nltk.corpus.reader.wordnet import WordNetError  # pylint: disable=E0401
 
-from src.utils import SenseType, SentenceRecord, clean_sentence, SenseMap
+from src.types.senses import SenseType
+from src.types.sentences import SentenceRecord
+from src.utils.sentences import clean_sentence
+from src.builders.sense_map import SenseMap
 
 logger = logging.getLogger(__name__)
 
@@ -174,3 +177,6 @@ def _load_sentences(
                     )
 
     return sentences
+
+
+__all__ = ["Corpora"]

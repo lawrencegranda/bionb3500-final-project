@@ -1,11 +1,7 @@
-"""Utilities for validating and cleaning sentences."""
+"""General utilities."""
 
-from .sentences import (
-    clean_sentence,
-)
-from .senses import SenseMap
+from .sentences import clean_sentence
 
 __all__ = [
     "clean_sentence",
-    "SenseMap",
 ]

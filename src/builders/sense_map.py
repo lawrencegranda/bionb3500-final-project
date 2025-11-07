@@ -9,29 +9,6 @@ from nltk.corpus import wordnet as wn
 from src.types.senses import SenseType, SenseMapType, GlossMapType
 
 
-def _synsets_by_glosses(lemma: str, gloss_set: Set[str]) -> Set[SenseType]:
-    """
-    Pick a synset for a lemma by a set of substrings in its definition.
-
-    - `lemma`: the target lemma.
-    - `gloss_set`: the set of substrings in the definition to match.
-
-    Returns:
-        Set[SenseType]: Set of synsets matching the glosses.
-    """
-    synsets = set()
-
-    for ss in wn.synsets(lemma, pos=wn.NOUN):
-        for gloss in gloss_set:
-            if gloss in ss.definition().lower():
-                synsets.add(ss)
-
-    if not synsets:
-        raise LookupError(f"No synset for {lemma} containing: {gloss_set!r}")
-
-    return synsets
-
-
 @dataclass(init=False, slots=True)
 class SenseMap:
     """Wrapper around a ``lemma -> label -> synset`` mapping."""
@@ -93,3 +70,29 @@ class SenseMap:
                 keys = [synset.name() for synset in synsets]
                 serialisable[lemma][label] = sorted(set(keys))
         return serialisable
+
+
+def _synsets_by_glosses(lemma: str, gloss_set: Set[str]) -> Set[SenseType]:
+    """
+    Pick a synset for a lemma by a set of substrings in its definition.
+
+    - `lemma`: the target lemma.
+    - `gloss_set`: the set of substrings in the definition to match.
+
+    Returns:
+        Set[SenseType]: Set of synsets matching the glosses.
+    """
+    synsets = set()
+
+    for ss in wn.synsets(lemma, pos=wn.NOUN):
+        for gloss in gloss_set:
+            if gloss in ss.definition().lower():
+                synsets.add(ss)
+
+    if not synsets:
+        raise LookupError(f"No synset for {lemma} containing: {gloss_set!r}")
+
+    return synsets
+
+
+__all__ = ["SenseMap"]
