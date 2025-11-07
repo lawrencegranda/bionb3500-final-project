@@ -10,8 +10,8 @@ from dataclasses import dataclass
 from typing import Dict, Iterator, Set, Tuple, Sequence
 from pathlib import Path
 from xml.etree import ElementTree as ET
-from nltk.corpus import wordnet as wn  # pylint: disable=E0401,C0413
-from nltk.corpus.reader.wordnet import WordNetError  # pylint: disable=E0401
+from nltk.corpus import wordnet as wn
+from nltk.corpus.reader.wordnet import WordNetError
 
 from src.types.senses import SenseType
 from src.types.sentences import SentenceRecord

@@ -20,10 +20,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.utils.senses import (  # pylint: disable=C0413
-    GlossMapType,
-    SenseMap,
-)
+from src.types.senses import GlossMapType  # pylint: disable=C0413,E0401
+from src.builders.sense_map import SenseMap  # pylint: disable=C0413,E0401
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("BuildSenseMap")
