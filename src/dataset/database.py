@@ -5,7 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from src.dataset import EmbeddingsTable, SentencesTable
+from .embeddings_table import EmbeddingsTable
+from .sentences_table import SentencesTable
 
 
 class Database:

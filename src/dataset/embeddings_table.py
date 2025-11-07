@@ -13,13 +13,13 @@ import pandas as pd
 import torch
 from transformers import BertTokenizer, BertModel
 
-from sentences_table import SentencesTable
 from src.types.embeddings import (
     EmbeddingRecord,
     LabelEmbeddings,
     LayerEmbeddings,
     LemmaEmbeddings,
 )
+from .sentences_table import SentencesTable
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger("EmbeddingsTable")
