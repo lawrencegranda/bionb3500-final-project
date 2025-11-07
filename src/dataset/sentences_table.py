@@ -1,9 +1,8 @@
-"""_summary_"""
+"""SQLite-backed collection of SemCor-UFSAC sentences filtered by a ``SenseMap``."""
 
 from __future__ import annotations
 
 import sqlite3
-from pathlib import Path
 from typing import (
     Iterator,
     Optional,
@@ -12,11 +11,34 @@ from typing import (
     Sequence,
 )
 import logging
-import pandas as pd  # pylint: disable=E0401
+import pandas as pd
 
-from src.utils import SenseType, SentenceRecord
+from src.types.senses import SenseType
+from src.types.sentences import SentenceRecord
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_schema(connection: sqlite3.Connection, table_name: str) -> None:
+    connection.execute(
+        f"""
+            CREATE TABLE IF NOT EXISTS {table_name} (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lemma TEXT NOT NULL,
+                text TEXT NOT NULL,
+                label TEXT NOT NULL,
+                synset TEXT NOT NULL,
+                source TEXT NOT NULL
+            )
+            """
+    )
+    connection.execute(
+        f"""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_{table_name}_unique
+            ON {table_name} (lemma, text, label, synset)
+            """
+    )
+    connection.commit()
 
 
 class SentencesTable:
@@ -27,46 +49,7 @@ class SentencesTable:
     def __init__(self, connection: sqlite3.Connection) -> None:
         self._conn = connection
         self._conn.row_factory = sqlite3.Row
-        self._ensure_schema()
-
-    @classmethod
-    def from_sentences(
-        cls,
-        db_path: str | Path,
-        sentences: Sequence[SentenceRecord],
-        overwrite: bool = True,
-    ) -> "SentencesTable":
-        """Create a new dataset.
-
-        Args:
-            db_path: Where to persist the SQLite database.
-            sentences: The sentences to insert into the dataset.
-            overwrite: If true, existing databases at ``db_path`` are removed before
-                building the dataset.
-        """
-
-        # Create the database file if it doesn't exist.
-        path = Path(db_path)
-        if overwrite and path.exists():
-            path.unlink()
-
-        # Connect to the database and create the dataset.
-        connection = sqlite3.connect(path)
-        dataset = cls(connection)
-
-        # Insert the sentences into the dataset.
-        for sentence in sentences:
-            dataset.insert_record(sentence)
-        dataset._conn.commit()
-
-        return dataset
-
-    @classmethod
-    def from_db(cls, db_path: str | Path) -> "SentencesTable":
-        """Load an existing SQLite-backed dataset from disk."""
-
-        connection = sqlite3.connect(Path(db_path))
-        return cls(connection)
+        _ensure_schema(self._conn, self.TABLE_NAME)
 
     def insert_record(self, record: SentenceRecord) -> None:
         """Insert a ``SentenceRecord`` into the dataset, ignoring duplicates."""
@@ -86,6 +69,19 @@ class SentencesTable:
                 record.source,
             ),
         )
+
+    def add_sentences(
+        self,
+        sentences: Sequence[SentenceRecord],
+    ) -> None:
+        """Add sentences to the dataset."""
+
+        # Insert the sentences into the dataset.
+        for sentence in sentences:
+            self.insert_record(sentence)
+
+        # Commit the changes to the database.
+        self._conn.commit()
 
     def iter_records(
         self,
@@ -123,45 +119,11 @@ class SentencesTable:
                 source=row["source"],
             )
 
-    def _ensure_schema(self) -> None:
-        self._conn.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                lemma TEXT NOT NULL,
-                text TEXT NOT NULL,
-                label TEXT NOT NULL,
-                synset TEXT NOT NULL,
-                source TEXT NOT NULL
-            )
-            """
-        )
-        self._conn.execute(
-            f"""
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_{self.TABLE_NAME}_unique
-            ON {self.TABLE_NAME} (lemma, text, label, synset)
-            """
-        )
-        self._conn.commit()
-
     def to_df(self) -> "pd.DataFrame":
         """Convert the dataset to a pandas DataFrame."""
 
         query = f"SELECT * FROM {self.TABLE_NAME}"
         return pd.read_sql_query(query, self._conn)
-
-    def close(self) -> None:
-        """Close the underlying SQLite connection."""
-
-        if self._conn:
-            self._conn.commit()
-            self._conn.close()
-
-    def __enter__(self) -> "SentencesTable":
-        return self
-
-    def __exit__(self, exc_type, exc, traceback) -> None:  # type: ignore[override]
-        self.close()
 
     def __len__(self) -> int:
         # Count the number of records in the dataset
@@ -175,3 +137,6 @@ class SentencesTable:
 
     def __iter__(self) -> Iterator[SentenceRecord]:
         return self.iter_records()
+
+
+__all__ = ["SentencesTable"]
