@@ -104,7 +104,7 @@ class EmbeddingsTable:
         # Compile the embeddings
         self.embeddings = _compile_embeddings(self._config)
 
-    def get_embeddings(self) -> LemmaEmbeddings:
+    def get_embeddings(self) -> Mapping[str, LemmaEmbeddings]:
         """Get the compiled embeddings."""
         if self.embeddings is None:
             self.embeddings = _compile_embeddings(self._config)
@@ -134,8 +134,10 @@ def _store_embedding(
     config.connection.commit()
 
 
-def _compile_embeddings(config: _EmbeddingsTableConfig) -> LemmaEmbeddings:
-    """Compile the embeddings into a LemmaEmbeddings object."""
+def _compile_embeddings(
+    config: _EmbeddingsTableConfig,
+) -> Mapping[str, LemmaEmbeddings]:
+    """Compile the embeddings into a mapping of lemma -> LemmaEmbeddings."""
     query = f"""
             SELECT s.lemma, e.layer, s.label, e.embedding, e.sentence_id
             FROM {EmbeddingsTable.TABLE_NAME} e
