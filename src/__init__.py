@@ -2,10 +2,12 @@
 
 from . import utils
 from . import dataset
-from .embeddings import EmbeddingStore
+from . import builders
+from . import analysis
 
 __all__ = [
     "utils",
     "dataset",
-    "EmbeddingStore",
+    "builders",
+    "analysis",
 ]
