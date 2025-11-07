@@ -1,28 +1,23 @@
 """Cluster embeddings and evaluate sense separation across layers."""
 
-from typing import Mapping, List
-from dataclasses import dataclass
-from collections import defaultdict
+from typing import Mapping
 from abc import ABC, abstractmethod
 
 import numpy as np
-import pandas as pd  # pylint: disable=E0401
-from sklearn.manifold import TSNE  # pylint: disable=E0401
-import umap  # pylint: disable=E0401
+from sklearn.manifold import TSNE
+import umap
+
+from src.types.clusters import (
+    LemmaClusters,
+    LayerClusters,
+    LabelClusters,
+    ClusterRecord,
+)
+from src.types.embeddings import LayerEmbeddings
+from src.dataset import Database
 
 
-@dataclass
-class ClusterRow:
-    """Result of clustering a single lemma."""
-
-    sentence_id: int
-    layer: int
-    lemma: str
-    label: str
-    coords: np.ndarray
-
-
-class ClusteringModel(ABC):
+class ClusteringModel(ABC):  # pylint: disable=R0903
     """Base class for clustering models."""
 
     @abstractmethod
@@ -32,10 +27,10 @@ class ClusteringModel(ABC):
     @abstractmethod
     def transform(self, embeddings: np.ndarray) -> np.ndarray:
         """Transform embeddings to 2D coordinates."""
-        pass
+        raise NotImplementedError
 
 
-class TSNEClusteringModel(ClusteringModel):
+class TSNEClusteringModel(ClusteringModel):  # pylint: disable=R0903
     """t-SNE clustering model."""
 
     def __init__(self, n, random_state=42):
@@ -53,7 +48,7 @@ class TSNEClusteringModel(ClusteringModel):
         return self.model.fit_transform(embeddings)
 
 
-class UMAPClusteringModel(ClusteringModel):
+class UMAPClusteringModel(ClusteringModel):  # pylint: disable=R0903
     """UMAP clustering model."""
 
     def __init__(self, n, random_state=42):
@@ -71,64 +66,70 @@ class UMAPClusteringModel(ClusteringModel):
         return self.model.fit_transform(embeddings)
 
 
+def make_clusters(
+    database: Database,
+    model_class: type[ClusteringModel],
+    random_state: int = 42,
+) -> Mapping[str, LemmaClusters]:
+    """
+    Return a dictionary of lemma -> LemmaClusters after dimensionality reduction.
+    """
+    result: Mapping[str, LemmaClusters] = {}
+
+    embeddings = database.embeddings_table.get_embeddings()
+
+    for lemma, lemma_embeddings in embeddings.items():
+        for layer, layer_embeddings in lemma_embeddings.layers.items():
+            result.get(lemma, LemmaClusters(lemma=lemma)).layers[layer] = cluster_layer(
+                lemma, layer, layer_embeddings, model_class, random_state
+            )
+
+    return result
+
+
 def cluster_layer(
     lemma: str,
     layer: int,
-    layer_df: pd.DataFrame,
+    layer_embeddings: LayerEmbeddings,
     model_class: type[ClusteringModel],
     random_state: int = 42,
-) -> Mapping[str, List[ClusterRow]]:
+) -> LayerClusters:
     """
-    Return a dictionary of label -> list of ClusterRow after dimensionality reduction.
+    Return a dictionary of label -> list of ClusterRecord after dimensionality reduction.
     Filters for rows corresponding to the given lemma.
     Pass in the ClusteringModel class to use.
     """
-    # Filter layer_df for the given lemma
-    layer_df = layer_df[layer_df["lemma"] == lemma]
+    result: LayerClusters = LayerClusters(layer=layer)
 
-    sentence_ids = layer_df["sentence_id"].values
-    labels = layer_df["label"].values
-    embeddings = np.stack(layer_df["embedding"].values)
+    # Flatten the embeddings into a list of (sentence_id, label, embedding) tuples
+    recs = [
+        (rec.sentence_id, rec.label, rec.embedding)
+        for label_emb in layer_embeddings.labels.values()
+        for rec in label_emb.records
+    ]
+    sentence_ids, labels, embeddings = zip(*recs)
 
     # Build model instance and fit
     model = model_class(len(embeddings), random_state=random_state)
     coords = model.transform(embeddings)
 
-    # Build label -> ClusterRow mapping for this layer
-    result = defaultdict(list)
-    for sentence_id, label, point in zip(sentence_ids, labels, coords):
-        result[label].append(
-            ClusterRow(
+    # Reorganize the clusters
+    for sentence_id, label, coord in zip(sentence_ids, labels, coords):
+        result.labels.get(label, LabelClusters(label=label)).records.append(
+            ClusterRecord(
                 sentence_id=sentence_id,
                 layer=layer,
                 lemma=lemma,
                 label=label,
-                coords=point,
+                coords=coord,
             )
         )
 
     return result
 
 
-def cluster_all_layers(
-    lemma: str,
-    lemma_df: pd.DataFrame,
-    model_class: type[ClusteringModel],
-    random_state: int = 42,
-) -> dict:
-    """
-    Return a dictionary of layer -> label -> list of ClusterRow after dimensionality reduction.
-    Pass in the ClusteringModel class to use.
-    """
-    # Filter lemma_df for the given lemma
-    lemma_df = lemma_df[lemma_df["lemma"] == lemma]
-
-    # Cluster all layers
-    result = defaultdict(lambda: defaultdict(list))
-    for layer in sorted(lemma_df["layer"].unique()):
-        layer_df = lemma_df[lemma_df["layer"] == layer]
-
-        # Cluster this layer
-        result[layer] = cluster(lemma, layer, layer_df, model_class, random_state)
-
-    return result
+__all__ = [
+    "make_clusters",
+    "TSNEClusteringModel",
+    "UMAPClusteringModel",
+]
