@@ -80,14 +80,16 @@ def make_clusters(
 
     for lemma, lemma_embeddings in embeddings.items():
         for layer, layer_embeddings in lemma_embeddings.layers.items():
-            result.get(lemma, LemmaClusters(lemma=lemma)).layers[layer] = cluster_layer(
-                lemma, layer, layer_embeddings, model_class, random_state
+            result.get(lemma, LemmaClusters(lemma=lemma)).layers[layer] = (
+                _cluster_layer(
+                    lemma, layer, layer_embeddings, model_class, random_state
+                )
             )
 
     return result
 
 
-def cluster_layer(
+def _cluster_layer(
     lemma: str,
     layer: int,
     layer_embeddings: LayerEmbeddings,
