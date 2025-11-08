@@ -16,11 +16,17 @@ sense_map_path: results/senses/sense_map.json
 # Path to the generated dataset (e.g., SQLite database)
 dataset_path: data/dataset.db
 
-# Directory to save metrics and plots
+# Directory to save metrics
 metrics_dir: results/metrics
+
+# Directory to save plots
+plots_dir: results/plots
 
 # Maximum number of sentences to collect for each lemma
 max_sentences: 1000
 
 # Model name to use for embeddings
 model_name: bert-base-uncased
+
+# Layers to use for clustering
+clustering_layers: [0, 4, 8, 12]
