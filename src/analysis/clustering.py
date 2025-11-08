@@ -79,11 +79,12 @@ def make_clusters(
     embeddings = database.embeddings_table.get_embeddings()
 
     for lemma, lemma_embeddings in embeddings.items():
+        if lemma not in result:
+            result[lemma] = LemmaClusters(lemma=lemma)
+
         for layer, layer_embeddings in lemma_embeddings.layers.items():
-            result.get(lemma, LemmaClusters(lemma=lemma)).layers[layer] = (
-                _cluster_layer(
-                    lemma, layer, layer_embeddings, model_class, random_state
-                )
+            result[lemma].layers[layer] = _cluster_layer(
+                lemma, layer, layer_embeddings, model_class, random_state
             )
 
     return result
@@ -117,7 +118,10 @@ def _cluster_layer(
 
     # Reorganize the clusters
     for sentence_id, label, coord in zip(sentence_ids, labels, coords):
-        result.labels.get(label, LabelClusters(label=label)).records.append(
+        if label not in result.labels:
+            result.labels[label] = LabelClusters(label=label)
+
+        result.labels[label].records.append(
             ClusterRecord(
                 sentence_id=sentence_id,
                 layer=layer,
