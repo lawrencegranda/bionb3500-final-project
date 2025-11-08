@@ -17,7 +17,7 @@ from src.types.embeddings import LayerEmbeddings
 from src.dataset import Database
 
 
-class ClusteringModel(ABC):  # pylint: disable=R0903
+class DimensionalityReductionModel(ABC):  # pylint: disable=R0903
     """Base class for clustering models."""
 
     @abstractmethod
@@ -30,7 +30,7 @@ class ClusteringModel(ABC):  # pylint: disable=R0903
         raise NotImplementedError
 
 
-class TSNEClusteringModel(ClusteringModel):  # pylint: disable=R0903
+class TSNEModel(DimensionalityReductionModel):  # pylint: disable=R0903
     """t-SNE clustering model."""
 
     def __init__(self, n, random_state=42):
@@ -48,7 +48,7 @@ class TSNEClusteringModel(ClusteringModel):  # pylint: disable=R0903
         return self.model.fit_transform(embeddings)
 
 
-class UMAPClusteringModel(ClusteringModel):  # pylint: disable=R0903
+class UMAPModel(DimensionalityReductionModel):  # pylint: disable=R0903
     """UMAP clustering model."""
 
     def __init__(self, n, random_state=42):
@@ -68,7 +68,7 @@ class UMAPClusteringModel(ClusteringModel):  # pylint: disable=R0903
 
 def make_clusters(
     database: Database,
-    model_class: type[ClusteringModel],
+    model_class: type[DimensionalityReductionModel],
     random_state: int = 42,
 ) -> Mapping[str, LemmaClusters]:
     """
@@ -93,13 +93,13 @@ def _cluster_layer(
     lemma: str,
     layer: int,
     layer_embeddings: LayerEmbeddings,
-    model_class: type[ClusteringModel],
+    model_class: type[DimensionalityReductionModel],
     random_state: int = 42,
 ) -> LayerClusters:
     """
     Return a dictionary of label -> list of ClusterRecord after dimensionality reduction.
     Filters for rows corresponding to the given lemma.
-    Pass in the ClusteringModel class to use.
+    Pass in the DimensionalityReductionModel class to use.
     """
     result: LayerClusters = LayerClusters(layer=layer)
 
@@ -130,8 +130,13 @@ def _cluster_layer(
     return result
 
 
+reduction_models: Mapping[str, type[DimensionalityReductionModel]] = {
+    "tsne": TSNEModel,
+    "umap": UMAPModel,
+}
+
+
 __all__ = [
+    "reduction_models",
     "make_clusters",
-    "TSNEClusteringModel",
-    "UMAPClusteringModel",
 ]
