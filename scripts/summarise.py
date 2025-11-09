@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Iterable
 
 import yaml
-import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -18,36 +17,14 @@ if str(REPO_ROOT) not in sys.path:
 from src.dataset import Database  # pylint: disable=C0413,E0401
 
 
-def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML data configuration file.",
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: Iterable[str] | None = None) -> None:
-    """Program entrypoint."""
-
-    args = _parse_args(argv)
-
-    # Load the data configuration
-    with args.data_config_path.open("r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle) or {}
-
-    model_name = data_config.get("model_name")
-    dataset_path = Path(data_config.get("dataset_path"))
-
+def run_summarise(dataset_path: Path) -> None:
+    """Run dataset summarization."""
     if not dataset_path.exists():
         print(f"Error: Database file not found at {dataset_path}")
         sys.exit(1)
 
     # Load the dataset and convert to pandas DataFrame
-    database = Database.from_db(dataset_path, model_name)
+    database = Database.from_db(dataset_path)
     df = database.sentences_table.to_df()
 
     # Print overall statistics
@@ -90,6 +67,27 @@ def main(argv: Iterable[str] | None = None) -> None:
     print("=" * 50)
     print("END OF SUMMARY")
     print("=" * 50)
+
+
+def main(argv: Iterable[str] | None = None) -> None:
+    """Program entrypoint."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "-d",
+        "--data-config-path",
+        type=Path,
+        required=True,
+        help="Path to the YAML data configuration file.",
+    )
+    args = parser.parse_args(argv)
+
+    # Load configuration
+    with args.data_config_path.open("r", encoding="utf-8") as handle:
+        data_config = yaml.safe_load(handle) or {}
+
+    dataset_path = Path(data_config.get("dataset_path"))
+
+    run_summarise(dataset_path)
 
 
 if __name__ == "__main__":  # pragma: no cover

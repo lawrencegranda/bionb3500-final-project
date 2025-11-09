@@ -138,32 +138,30 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Iterable[str] | None = None) -> None:
-    """Program entrypoint."""
-    args = _parse_args(argv)
+def run_plot_clusters(
+    dataset_path: Path,
+    model_name: str,
+    output_dir: Path,
+    layers_to_plot: Sequence[int],
+    random_state: int = 42,
+) -> None:
+    """
+    Generate clustering visualizations for the dataset.
 
-    # Load configuration
-    with args.data_config_path.open("r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle) or {}
-
-    dataset_path = Path(data_config.get("dataset_path"))
-
+    Args:
+        dataset_path: Path to the SQLite database
+        model_name: Model name for the database
+        output_dir: Directory to save plots
+        layers_to_plot: List of layer indices to visualize
+        random_state: Random seed for reproducibility
+    """
     if not dataset_path.exists():
         print(f"Error: Database file not found at {dataset_path}")
         sys.exit(1)
 
-    # Get model name from config
-    model_name = data_config.get("model_name", "bert-base-uncased")
-
     # Create output directory
-    output_dir = Path(data_config.get("plots_dir")) / model_name
+    output_dir = output_dir / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Get random state from config
-    random_state = data_config.get("random_state", 42)
-
-    # Determine layers to plot
-    layers_to_plot: Sequence[int] = data_config.get("clustering_layers")
 
     print("=" * 50)
     print("CLUSTERING VISUALIZATION")
@@ -200,6 +198,38 @@ def main(argv: Iterable[str] | None = None) -> None:
     print("\n" + "=" * 50)
     print("CLUSTERING VISUALIZATION COMPLETE")
     print("=" * 50)
+
+
+def main():
+    """Program entrypoint."""
+    parser = argparse.ArgumentParser(description="Plot clusters for a dataset.")
+    parser.add_argument(
+        "-d",
+        "--data-config-path",
+        type=Path,
+        required=True,
+        help="Path to the YAML configuration containing data configuration.",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        required=True,
+        help="HuggingFace model identifier",
+    )
+    args = parser.parse_args()
+
+    # Load configuration
+    with open(args.data_config_path, "r", encoding="utf-8") as handle:
+        data_config = yaml.safe_load(handle)
+
+    dataset_path = Path(data_config.get("dataset_path"))
+    output_dir = Path(data_config.get("plots_dir"))
+    random_state = data_config.get("random_state")
+    layers_to_plot: Sequence[int] = data_config.get("clustering_layers")
+
+    run_plot_clusters(
+        dataset_path, args.model, output_dir, layers_to_plot, random_state
+    )
 
 
 if __name__ == "__main__":
