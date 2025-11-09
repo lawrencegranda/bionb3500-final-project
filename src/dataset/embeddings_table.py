@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 import torch
-from transformers import BertTokenizer, BertModel
+from transformers import BertTokenizer, BertModel, DistilBertTokenizer, DistilBertModel
 
 from src.types.embeddings import (
     EmbeddingRecord,
@@ -63,11 +63,20 @@ class EmbeddingsTable:
         model_name: str = "bert-base-uncased",
     ) -> None:
         """Initialize the embeddings table."""
+        if model_name == "bert-base-uncased":
+            model = BertModel.from_pretrained(model_name)
+            tokenizer = BertTokenizer.from_pretrained(model_name)
+        elif model_name == "distilbert-base-uncased":
+            model = DistilBertModel.from_pretrained(model_name)
+            tokenizer = DistilBertTokenizer.from_pretrained(model_name)
+        else:
+            raise ValueError(f"Invalid model name: {model_name}")
+
         self._config = _EmbeddingsTableConfig(
             connection=connection,
             model_name=model_name,
-            tokenizer=BertTokenizer.from_pretrained(model_name),
-            model=BertModel.from_pretrained(model_name),
+            tokenizer=tokenizer,
+            model=model,
         )
         self._config.model.eval()
         _ensure_schema(self._config.connection, self.TABLE_NAME)
