@@ -106,11 +106,13 @@ def _cluster_layer(
 
     # Flatten the embeddings into a list of (sentence_id, label, embedding) tuples
     recs = [
-        (rec.sentence_id, rec.label, rec.embedding)
+        (rec.sentence_id, label_emb.label, rec.embedding)
         for label_emb in layer_embeddings.labels.values()
         for rec in label_emb.records
     ]
-    sentence_ids, labels, embeddings = zip(*recs)
+    sentence_ids = [rec[0] for rec in recs]
+    labels = [rec[1] for rec in recs]
+    embeddings = np.array([rec[2] for rec in recs])
 
     # Build model instance and fit
     model = model_class(len(embeddings), random_state=random_state)
