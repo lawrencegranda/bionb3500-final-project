@@ -106,7 +106,7 @@ class EmbeddingsTable:
 
     def get_embeddings(self) -> Mapping[str, LemmaEmbeddings]:
         """Get the compiled embeddings."""
-        if self.embeddings is None:
+        if not self.embeddings:
             self.embeddings = _compile_embeddings(self._config)
 
         return self.embeddings
@@ -150,10 +150,14 @@ def _compile_embeddings(
         # Build the embedding record
         embedding_record = _build_embedding_record(sentence_id, layer, embedding_bytes)
 
-        lemma_obj = result.get(lemma, LemmaEmbeddings(lemma=lemma))
-        layer_obj = lemma_obj.layers.get(layer, LayerEmbeddings(layer=layer))
-        label_obj = layer_obj.labels.get(label, LabelEmbeddings(label=label))
-        label_obj.records.append(embedding_record)
+        if lemma not in result:
+            result[lemma] = LemmaEmbeddings(lemma=lemma)
+        if layer not in result[lemma].layers:
+            result[lemma].layers[layer] = LayerEmbeddings(layer=layer)
+        if label not in result[lemma].layers[layer].labels:
+            result[lemma].layers[layer].labels[label] = LabelEmbeddings(label=label)
+
+        result[lemma].layers[layer].labels[label].records.append(embedding_record)
 
     return result
 
