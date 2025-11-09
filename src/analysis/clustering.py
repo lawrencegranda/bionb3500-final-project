@@ -1,11 +1,13 @@
 """Cluster embeddings and evaluate sense separation across layers."""
 
-from typing import Mapping
 from abc import ABC, abstractmethod
+from typing import Mapping
 
+import warnings
 import numpy as np
 from sklearn.manifold import TSNE
 import umap
+
 
 from src.types.clusters import (
     LemmaClusters,
@@ -15,6 +17,9 @@ from src.types.clusters import (
 )
 from src.types.embeddings import LayerEmbeddings
 from src.dataset import Database
+
+# Suppress warnings in this file
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class DimensionalityReductionModel(ABC):  # pylint: disable=R0903

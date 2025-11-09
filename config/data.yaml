@@ -28,5 +28,8 @@ max_sentences: 1000
 # Model name to use for embeddings
 model_name: bert-base-uncased
 
+# Random state to use for clustering
+random_state: 42
+
 # Layers to use for clustering
 clustering_layers: [0, 4, 8, 12]

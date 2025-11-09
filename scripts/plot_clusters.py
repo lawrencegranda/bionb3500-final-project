@@ -135,14 +135,6 @@ def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
         required=True,
         help="Path to the YAML data configuration file.",
     )
-    parser.add_argument(
-        "-r",
-        "--random-state",
-        type=int,
-        required=False,
-        default=42,
-        help="Random state for clustering.",
-    )
     return parser.parse_args(argv)
 
 
@@ -160,24 +152,27 @@ def main(argv: Iterable[str] | None = None) -> None:
         print(f"Error: Database file not found at {dataset_path}")
         sys.exit(1)
 
+    # Get model name from config
+    model_name = data_config.get("model_name", "bert-base-uncased")
+
     # Create output directory
-    output_dir = Path(data_config.get("plots_dir"))
+    output_dir = Path(data_config.get("plots_dir")) / model_name
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Get random state from config
+    random_state = data_config.get("random_state", 42)
 
     # Determine layers to plot
     layers_to_plot: Sequence[int] = data_config.get("clustering_layers")
 
-    # Get model name from config
-    model_name = data_config.get("model_name", "bert-base-uncased")
-
-    print("=" * 100)
+    print("=" * 50)
     print("CLUSTERING VISUALIZATION")
-    print("=" * 100)
+    print("=" * 50)
     print(f"Database: {dataset_path}")
     print(f"Model: {model_name}")
     print(f"Layers to plot: {layers_to_plot}")
     print(f"Output directory: {output_dir}")
-    print(f"Random state: {args.random_state}")
+    print(f"Random state: {random_state}")
     print()
 
     # Load database
@@ -186,11 +181,11 @@ def main(argv: Iterable[str] | None = None) -> None:
     # Process each dimensionality reduction method
     for method_name, model_class in reduction_models.items():
         print(f"\nProcessing method: {method_name.upper()}")
-        print("-" * 100)
+        print("-" * 50)
 
         # Generate clusters for all lemmas
         clusters_by_lemma = make_clusters(
-            database, model_class, random_state=args.random_state
+            database, model_class, random_state=random_state
         )
 
         # Visualize each lemma
@@ -202,9 +197,9 @@ def main(argv: Iterable[str] | None = None) -> None:
 
     database.close()
 
-    print("\n" + "=" * 100)
+    print("\n" + "=" * 50)
     print("CLUSTERING VISUALIZATION COMPLETE")
-    print("=" * 100)
+    print("=" * 50)
 
 
 if __name__ == "__main__":
