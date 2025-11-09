@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
+from typing import Optional
 
 from .embeddings_table import EmbeddingsTable
 from .sentences_table import SentencesTable
@@ -12,14 +13,20 @@ from .sentences_table import SentencesTable
 class Database:
     """Store BERT embeddings for target lemmas in a database."""
 
-    def __init__(self, connection: sqlite3.Connection, model_name: str) -> None:
+    def __init__(
+        self, connection: sqlite3.Connection, model_name: Optional[str] = None
+    ) -> None:
         """Initialize the database."""
         self._conn = connection
-        self.embeddings_table = EmbeddingsTable(self._conn, model_name)
         self.sentences_table = SentencesTable(self._conn)
 
+        if model_name:
+            self.embeddings_table = EmbeddingsTable(self._conn, model_name)
+
     @classmethod
-    def from_db(cls, db_path: str | Path, model_name: str) -> "Database":
+    def from_db(
+        cls, db_path: str | Path, model_name: Optional[str] = None
+    ) -> "Database":
         """Load an existing database."""
         connection = sqlite3.connect(Path(db_path))
         return cls(connection, model_name)
