@@ -46,7 +46,6 @@ def main(argv: Iterable[str] | None = None) -> None:
     model_names = data_config.get("model_names")
     output_dir = Path(data_config.get("plots_dir"))
     random_state = data_config.get("random_state", 42)
-    layers_to_plot = data_config.get("clustering_layers", [0, 6, 12])
 
     print("=" * 70)
     print(" " * 20 + "ANALYSIS PIPELINE")
@@ -63,6 +62,8 @@ def main(argv: Iterable[str] | None = None) -> None:
     run_summarise(dataset_path)
 
     for model_name in model_names:
+        layers_to_plot = data_config.get("clustering_layers").get(model_name)
+
         print("\n" + "=" * 70)
         print(" " * 25 + f"MODEL: {model_name}")
         print("=" * 70)

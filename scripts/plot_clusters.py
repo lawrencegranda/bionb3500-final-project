@@ -225,10 +225,11 @@ def main():
     dataset_path = Path(data_config.get("dataset_path"))
     output_dir = Path(data_config.get("plots_dir"))
     random_state = data_config.get("random_state")
-    layers_to_plot: Sequence[int] = data_config.get("clustering_layers")
+    model_name = args.model
+    layers_to_plot = data_config.get("clustering_layers").get(model_name)
 
     run_plot_clusters(
-        dataset_path, args.model, output_dir, layers_to_plot, random_state
+        dataset_path, model_name, output_dir, layers_to_plot, random_state
     )
 
 
