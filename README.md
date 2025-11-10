@@ -75,19 +75,34 @@ python -m scripts.evaluate_metrics -d config/data.yaml --model bert-base-uncased
 ### 5. View Results
 
 - **Plots**: `results/plots/{model_name}/` - UMAP/t-SNE visualizations by lemma
-- **Metrics**: `results/metrics/{model_name}_metrics.csv` - Clustering quality metrics per layer
+- **Metrics**: `results/metrics/{model_name}/` - One CSV per metric, sorted by lemma and layer
 - **Database**: `data/dataset.db` - Raw sentences and embeddings
 
 #### Metrics CSV Format
 
-The metrics CSV contains one row per (lemma, layer, metric) combination:
+Each metric has its own CSV file (e.g., `silhouette.csv`, `adjusted_rand.csv`):
 
-| lemma | layer | metric        | value |
-| ----- | ----- | ------------- | ----- |
-| bank  | 0     | silhouette    | 0.245 |
-| bank  | 0     | adjusted_rand | 0.123 |
-| bank  | 4     | silhouette    | 0.567 |
-| ...   | ...   | ...           | ...   |
+```
+results/metrics/
+├── bert-base-uncased/
+│   ├── silhouette.csv
+│   ├── adjusted_rand.csv
+│   ├── normalized_mutual_info.csv
+│   ├── davies_bouldin.csv
+│   └── calinski_harabasz.csv
+└── distilbert-base-uncased/
+    └── ...
+```
+
+Each CSV contains:
+
+| lemma | layer | value |
+| ----- | ----- | ----- |
+| bank  | 0     | 0.245 |
+| bank  | 4     | 0.567 |
+| bank  | 8     | 0.632 |
+| bat   | 0     | 0.314 |
+| ...   | ...   | ...   |
 
 ## Interpreting Results
 
@@ -142,7 +157,12 @@ Look for peaks in ARI, NMI, and Silhouette scores in middle-to-upper layers to c
 │   └── dataset.db          # Generated SQLite database
 ├── latex/                  # LaTeX documentation and figures
 ├── results/
-│   ├── metrics/            # Computed clustering metrics
+│   ├── metrics/            # Computed clustering metrics (by model)
+│   │   ├── bert-base-uncased/
+│   │   │   ├── silhouette.csv
+│   │   │   ├── adjusted_rand.csv
+│   │   │   └── ...
+│   │   └── distilbert-base-uncased/
 │   ├── plots/              # Visualization outputs (by model)
 │   │   ├── bert-base-uncased/
 │   │   └── distilbert-base-uncased/

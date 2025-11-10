@@ -66,8 +66,9 @@ def run_evaluate_metrics(
     # Compute metrics for all lemmas
     metrics_by_lemma = make_metrics(database, all_metric_classes, random_state)
 
-    # Prepare CSV data
-    csv_rows = []
+    # Organize data by metric
+    # Structure: metric_name -> list of {lemma, layer, value}
+    metrics_data = {metric_name: [] for metric_name in metric_models.keys()}
 
     for lemma, lemma_metrics in metrics_by_lemma.items():
         print(f"\nProcessing lemma: {lemma}")
@@ -78,11 +79,10 @@ def run_evaluate_metrics(
                 continue
 
             for metric_name, metric_record in layer_metrics.labels.items():
-                csv_rows.append(
+                metrics_data[metric_name].append(
                     {
                         "lemma": metric_record.lemma,
                         "layer": metric_record.layer,
-                        "metric": metric_record.metric,
                         "value": metric_record.value,
                     }
                 )
@@ -92,20 +92,35 @@ def run_evaluate_metrics(
 
     database.close()
 
-    # Write to CSV
-    output_file = output_dir / f"{model_name}_metrics.csv"
-    with output_file.open("w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = ["lemma", "layer", "metric", "value"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    # Create model-specific directory
+    model_output_dir = output_dir / model_name
+    model_output_dir.mkdir(parents=True, exist_ok=True)
 
-        writer.writeheader()
-        writer.writerows(csv_rows)
+    # Write one CSV per metric
+    total_files = 0
+    for metric_name, rows in metrics_data.items():
+        if not rows:
+            continue
+
+        # Sort by lemma first, then by layer
+        sorted_rows = sorted(rows, key=lambda x: (x["lemma"], x["layer"]))
+
+        output_file = model_output_dir / f"{metric_name}.csv"
+        with output_file.open("w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = ["lemma", "layer", "value"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            writer.writeheader()
+            writer.writerows(sorted_rows)
+
+        print(f"\nSaved {metric_name}: {output_file}")
+        total_files += 1
 
     print("\n" + "=" * 50)
     print("METRICS EVALUATION COMPLETE")
     print("=" * 50)
-    print(f"Results saved to: {output_file}")
-    print(f"Total rows: {len(csv_rows)}")
+    print(f"Results saved to: {model_output_dir}")
+    print(f"Total files: {total_files}")
     print("=" * 50)
 
 
