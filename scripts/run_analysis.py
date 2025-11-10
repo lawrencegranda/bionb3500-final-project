@@ -20,7 +20,7 @@ from scripts.plot_clusters import run_plot_clusters  # pylint: disable=C0413, E0
 
 def main() -> None:
     """Program entrypoint."""
-    args = get_args(__doc__)
+    args = get_args(__doc__, get_model_arg=True)
 
     # Load configuration
     dataset_path = args.config.paths.dataset_path

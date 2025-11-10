@@ -189,7 +189,7 @@ def run_plot_clusters(
 
 def main() -> None:
     """Program entrypoint."""
-    args = get_args(__doc__)
+    args = get_args(__doc__, get_model_arg=True)
 
     run_plot_clusters(
         args.config.paths.dataset_path,

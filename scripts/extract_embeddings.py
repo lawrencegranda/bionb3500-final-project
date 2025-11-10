@@ -42,7 +42,7 @@ def run_extract_embeddings(
 
 def main() -> None:
     """Program entrypoint."""
-    args = get_args(__doc__)
+    args = get_args(__doc__, get_model_arg=True)
     run_extract_embeddings(args.config.paths.dataset_path, args.model)
 
 

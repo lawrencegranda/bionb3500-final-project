@@ -143,7 +143,7 @@ def load_config_from_parser_args(args: argparse.Namespace) -> ConfigType:
     return ConfigType.from_yaml(args.data_config_path)
 
 
-def get_args(description: str, get_model_arg: bool = True) -> Args:
+def get_args(description: str, get_model_arg: bool = False) -> Args:
     """
     Create an Args object with the standard data-config-path argument.
     """
