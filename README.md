@@ -14,113 +14,69 @@ poetry install
 
 ## Workflow
 
-The complete analysis pipeline consists of 5 steps:
+### 1. Configure Your Analysis
+
+Edit configuration files to specify target words and parameters:
+
+- `config/words.yaml` - Define target words and their sense definitions
+- `config/data.yaml` - Set paths, corpora, models, and clustering layers
+
+### 2. Build Sense Map
+
+Generate WordNet sense mappings from gloss substrings:
 
 ```bash
-# 1. Build sense map (maps words to their different senses)
-python scripts/build_sense_map.py
-
-# 2. Extract sentences from corpora and save to database
-python scripts/save_corpora.py
-
-# 3. View dataset statistics
-python scripts/summarise.py -d config/data.yaml
-
-# 4. Extract BERT embeddings for all layers
-python scripts/extract_embeddings.py -d config/data.yaml --layer -1
-
-# 5. Analyze clustering and sense separation
-python scripts/cluster_analysis.py -d config/data.yaml --visualize
+python -m scripts.build_sense_map -d config/data.yaml
 ```
 
-## Usage
+This creates `results/senses/sense_map.json` mapping words → sense labels → WordNet keys.
 
-### 1. Build Sense Map
+### 3. Save Corpora to Database
+
+Filter and persist SemCor sentences to SQLite database:
 
 ```bash
-python scripts/build_sense_map.py
+python -m scripts.save_corpora -d config/data.yaml
 ```
 
-### 2. Save Corpora to Database
+This creates `data/dataset.db` with filtered sentences for your target words.
+
+### 4. Run Complete Analysis Pipeline
+
+Execute the full analysis workflow (recommended):
 
 ```bash
-python scripts/save_corpora.py
+python -m scripts.run_analysis -d config/data.yaml
 ```
 
-### 3. Summarize Dataset Statistics
+This automatically:
 
-View dataset and embedding statistics:
+- Summarizes the dataset statistics
+- Extracts embeddings for all configured models
+- Generates clustering visualizations
+
+**OR** run individual steps:
 
 ```bash
-python scripts/summarise.py -d config/data.yaml
+# Summarize dataset statistics
+python -m scripts.summarise -d config/data.yaml
+
+# Extract embeddings for a specific model
+python -m scripts.extract_embeddings -d config/data.yaml --model bert-base-uncased
+
+# Generate clustering plots for a specific model
+python -m scripts.plot_clusters -d config/data.yaml --model bert-base-uncased
 ```
 
-This will display:
+### 5. View Results
 
-- Dataset statistics by label, synset, and source
-- Embedding counts per layer
-- Mean embedding analysis per label and layer (with mean norm and std deviation)
-- Overall embedding statistics across all labels
-
-### 4. Extract BERT Embeddings
-
-Extract embeddings for all sentences in the dataset:
-
-```bash
-python scripts/extract_embeddings.py -d config/data.yaml
-```
-
-Options:
-
-- `-d, --data-config-path`: Path to YAML configuration file (required)
-- `--model`: HuggingFace model identifier (default: `bert-base-uncased`)
-- `--layer`: BERT layer to extract up to, -1 for all layers (default: `-1`)
-
-**Note**: The script extracts embeddings from **all layers up to the specified layer**. For example:
-
-- `--layer -1`: Extracts all 13 layers (0-12 for BERT-base)
-- `--layer 6`: Extracts layers 0 through 6
-- `--layer 0`: Extracts only layer 0
-
-### 5. Cluster Analysis
-
-Evaluate sense separation and clustering quality across layers:
-
-```bash
-python scripts/cluster_analysis.py -d config/data.yaml --visualize
-```
-
-Options:
-
-- `-d, --data-config-path`: Path to YAML configuration file (required)
-- `--lemma`: Analyze specific lemma only (default: all lemmas)
-- `--method`: Clustering method - `kmeans`, `hdbscan`, or `both` (default: `both`)
-- `--visualize`: Generate t-SNE and UMAP visualizations
-- `--output-dir`: Directory to save results (default: `results/metrics`)
-
-**Output**:
-
-- `clustering_metrics.csv`: Detailed metrics for each lemma/layer/method
-- `{lemma}_metrics.png`: Line plots showing how metrics vary across layers
-- `{lemma}_tsne.png`: t-SNE visualizations for selected layers
-- `{lemma}_umap.png`: UMAP visualizations for selected layers
-
-**Metrics Evaluated**:
-
-- **Silhouette Score** (higher = better clustering)
-- **Adjusted Rand Index (ARI)** (measures agreement with true labels)
-- **Normalized Mutual Information (NMI)** (information shared with true labels)
-- **Davies-Bouldin Index** (lower = better separation)
-- **Calinski-Harabasz Score** (higher = better defined clusters)
-
-This directly tests the hypotheses from the proposal:
-
-- **H1**: Whether embeddings naturally cluster by sense without supervision
-- **H2**: Whether sense differentiation peaks in middle-to-upper layers
+- **Plots**: `results/plots/{model_name}/` - UMAP/t-SNE visualizations
+- **Metrics**: `results/metrics/` - Clustering quality metrics (if computed)
+- **Database**: `data/dataset.db` - Raw sentences and embeddings
 
 ## Interpreting Results
 
-### Clustering Metrics
+### Metrics
 
 1. **Silhouette Score** (range: -1 to 1)
 
@@ -159,35 +115,47 @@ According to the **Layer-wise Semantic Specialization** hypothesis:
 
 Look for peaks in ARI, NMI, and Silhouette scores in middle-to-upper layers to confirm H2.
 
-## Database Schema
-
-### Sentences Table
-
-- `id`: Unique sentence identifier
-- `lemma`: Target lemma
-- `text`: Sentence text
-- `label`: Sense label
-- `synset`: WordNet synset
-- `source`: Source corpus
-
-### Embeddings Table
-
-- `sentence_id`: Foreign key to sentences.id
-- `layer`: Layer number extracted from
-- `embedding`: BERT embedding vector (BLOB)
-- **Primary Key**: (`sentence_id`, `layer`) - Each sentence can have multiple embeddings, one per layer
-
 ## Project Structure
 
 ```
 .
-├── config/          # Configuration files
-├── data/            # Datasets and raw corpora
-├── latex/           # Project documentation
-├── results/         # Output files (embeddings, plots, metrics)
-├── scripts/         # Executable scripts
-└── src/             # Source code
-    ├── dataset/     # Dataset loading and management
-    ├── utils/       # Utility functions
-    └── embeddings.py # BERT embedding extraction
+├── config/
+│   ├── data.yaml           # Main configuration (paths, models, parameters)
+│   └── words.yaml          # Target words and sense definitions
+├── data/
+│   ├── raw/                # Raw XML corpora (SemCor, WNGT, etc.)
+│   └── dataset.db          # Generated SQLite database
+├── latex/                  # LaTeX documentation and figures
+├── results/
+│   ├── metrics/            # Computed clustering metrics
+│   ├── plots/              # Visualization outputs (by model)
+│   │   ├── bert-base-uncased/
+│   │   └── distilbert-base-uncased/
+│   └── senses/
+│       └── sense_map.json  # Generated sense mappings
+├── scripts/
+│   ├── helpers.py          # Shared configuration utilities
+│   ├── build_sense_map.py  # Step 1: Build WordNet sense map
+│   ├── save_corpora.py     # Step 2: Filter and save sentences
+│   ├── summarise.py        # Summarize dataset statistics
+│   ├── extract_embeddings.py # Extract BERT embeddings
+│   ├── plot_clusters.py    # Generate visualizations
+│   └── run_analysis.py     # Run complete pipeline
+└── src/
+    ├── analysis/
+    │   ├── clustering.py   # Dimensionality reduction (UMAP, t-SNE)
+    │   └── metrics.py      # Clustering evaluation metrics
+    ├── builders/
+    │   ├── corpora.py      # Corpus loading and filtering
+    │   └── sense_map.py    # Sense map construction
+    ├── dataset/
+    │   ├── database.py     # SQLite database interface
+    │   ├── embeddings.py   # BERT embedding extraction
+    │   └── sentences.py    # Sentence storage and retrieval
+    └── types/              # Type definitions and data structures
+        ├── clusters.py
+        ├── embeddings.py
+        ├── metrics.py
+        ├── sentences.py
+        └── senses.py
 ```
