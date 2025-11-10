@@ -3,7 +3,6 @@
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
-import warnings
 import numpy as np
 from sklearn.metrics import (
     silhouette_score,
@@ -18,9 +17,6 @@ from src.types.metrics import (
 )
 from src.types.embeddings import LayerEmbeddings
 from src.dataset import Database
-
-# Suppress warnings in this file
-warnings.filterwarnings("ignore", category=UserWarning)
 
 
 class MetricModel(ABC):  # pylint: disable=R0903
