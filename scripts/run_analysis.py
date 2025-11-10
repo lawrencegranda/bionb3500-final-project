@@ -20,11 +20,11 @@ from scripts.plot_clusters import run_plot_clusters  # pylint: disable=C0413, E0
 
 def main() -> None:
     """Program entrypoint."""
-    args = get_args(__doc__, get_model_arg=True)
+    args = get_args(__doc__)
 
     # Load configuration
     dataset_path = args.config.paths.dataset_path
-    model_names = args.config.model_names
+    model_names = args.config.model.model_names
     output_dir = args.config.paths.plots_dir
     random_state = args.config.model.random_state
     clustering_layers = args.config.model.clustering_layers
