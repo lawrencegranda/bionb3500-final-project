@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 """Extract BERT embeddings for all sentences in the dataset."""
 
-import argparse
 from pathlib import Path
 import sys
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-
+from scripts.helpers import get_args  # pylint: disable=C0413, E0401
 from src.dataset import Database  # pylint: disable=C0413,E0401
 
 
@@ -42,33 +40,10 @@ def run_extract_embeddings(
         print(f"Done! Embeddings saved to {db_path}.")
 
 
-def main():
+def main() -> None:
     """Program entrypoint."""
-    parser = argparse.ArgumentParser(
-        description="Extract BERT embeddings for sentences in the dataset."
-    )
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML configuration containing data configuration.",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        required=True,
-        help="HuggingFace model identifier",
-    )
-    args = parser.parse_args()
-
-    # Load configuration
-    with open(args.data_config_path, "r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle)
-
-    dataset_path = Path(data_config.get("dataset_path"))
-
-    run_extract_embeddings(dataset_path, args.model)
+    args = get_args(__doc__)
+    run_extract_embeddings(args.config.paths.dataset_path, args.model)
 
 
 if __name__ == "__main__":

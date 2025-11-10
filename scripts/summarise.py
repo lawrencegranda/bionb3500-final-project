@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-import argparse
 import sys
 from pathlib import Path
-from typing import Iterable
-
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-
+from scripts.helpers import get_args  # pylint: disable=C0413, E0401
 from src.dataset import Database  # pylint: disable=C0413,E0401
 
 
@@ -69,25 +65,10 @@ def run_summarise(dataset_path: Path) -> None:
     print("=" * 50)
 
 
-def main(argv: Iterable[str] | None = None) -> None:
+def main() -> None:
     """Program entrypoint."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML data configuration file.",
-    )
-    args = parser.parse_args(argv)
-
-    # Load configuration
-    with args.data_config_path.open("r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle) or {}
-
-    dataset_path = Path(data_config.get("dataset_path"))
-
-    run_summarise(dataset_path)
+    args = get_args(__doc__)
+    run_summarise(args.config.paths.dataset_path)
 
 
 if __name__ == "__main__":  # pragma: no cover

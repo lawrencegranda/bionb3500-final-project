@@ -3,18 +3,17 @@
 
 from __future__ import annotations
 
-import argparse
 import sys
 from pathlib import Path
-from typing import Iterable, Mapping, Sequence
+from typing import Mapping, Sequence
 
-import yaml
 import matplotlib.pyplot as plt
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.helpers import get_args  # pylint: disable=C0413, E0401
 from src.dataset import Database  # pylint: disable=C0413, E0401
 from src.analysis.clustering import (  # pylint: disable=C0413, E0401
     make_clusters,
@@ -126,18 +125,6 @@ def visualize_lemma_clusters(
     print(f"  {lemma}: Saved {output_path.name}")
 
 
-def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML data configuration file.",
-    )
-    return parser.parse_args(argv)
-
-
 def run_plot_clusters(
     dataset_path: Path,
     model_name: str,
@@ -200,36 +187,16 @@ def run_plot_clusters(
     print("=" * 50)
 
 
-def main():
+def main() -> None:
     """Program entrypoint."""
-    parser = argparse.ArgumentParser(description="Plot clusters for a dataset.")
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML configuration containing data configuration.",
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        required=True,
-        help="HuggingFace model identifier",
-    )
-    args = parser.parse_args()
-
-    # Load configuration
-    with open(args.data_config_path, "r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle)
-
-    dataset_path = Path(data_config.get("dataset_path"))
-    output_dir = Path(data_config.get("plots_dir"))
-    random_state = data_config.get("random_state")
-    model_name = args.model
-    layers_to_plot = data_config.get("clustering_layers").get(model_name)
+    args = get_args(__doc__)
 
     run_plot_clusters(
-        dataset_path, model_name, output_dir, layers_to_plot, random_state
+        args.config.paths.dataset_path,
+        args.model,
+        args.config.paths.plots_dir,
+        args.config.model.clustering_layers.get(args.model),
+        args.config.model.random_state,
     )
 
 

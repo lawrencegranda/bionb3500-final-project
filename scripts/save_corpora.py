@@ -2,20 +2,16 @@
 
 from __future__ import annotations
 
-import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Iterable, List, Sequence
-
-import yaml
-
+from typing import List, Sequence
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-
+from scripts.helpers import get_args  # pylint: disable=C0413, E0401
 from src.builders import Corpora, SenseMap  # pylint: disable=C0413,E0401
 from src.dataset import Database  # pylint: disable=C0413,E0401
 from src.types.sentences import SentenceRecord  # pylint: disable=C0413,E0401
@@ -52,32 +48,18 @@ def _collect_sentences(
     return records
 
 
-def _parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "-d",
-        "--data-config-path",
-        type=Path,
-        required=True,
-        help="Path to the YAML data configuration file.",
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: Iterable[str] | None = None) -> None:
+def main() -> None:
     """Program entrypoint."""
 
-    args = _parse_args(argv)
+    args = get_args(__doc__)
 
-    with args.data_config_path.open("r", encoding="utf-8") as handle:
-        data_config = yaml.safe_load(handle) or {}
-
-    wn_key_type = data_config.get("wn_key_type")
-    corpora_paths = [Path(path) for path in data_config.get("corpora_paths")]
-    sense_map_path = Path(data_config.get("sense_map_path"))
-    dataset_path = Path(data_config.get("dataset_path"))
-    max_sentences = int(data_config.get("max_sentences"))
-    model_name = data_config.get("model_name")
+    # Extract configuration parameters
+    wn_key_type = args.config.corpora.wn_key_type
+    corpora_paths = args.config.paths.corpora_paths
+    sense_map_path = args.config.paths.sense_map_path
+    dataset_path = args.config.paths.dataset_path
+    max_sentences = args.config.corpora.max_sentences
+    model_name = args.model
 
     with sense_map_path.open("r", encoding="utf-8") as handle:
         sense_map_payload = json.load(handle)
