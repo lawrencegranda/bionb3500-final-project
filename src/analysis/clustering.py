@@ -74,7 +74,7 @@ class UMAPModel(DimensionalityReductionModel):  # pylint: disable=R0903
 def make_clusters(
     database: Database,
     model_class: type[DimensionalityReductionModel],
-    random_state: int = 42,
+    random_state: int,
 ) -> Mapping[str, LemmaClusters]:
     """
     Return a dictionary of lemma -> LemmaClusters after dimensionality reduction.
@@ -100,7 +100,7 @@ def _cluster_layer(
     layer: int,
     layer_embeddings: LayerEmbeddings,
     model_class: type[DimensionalityReductionModel],
-    random_state: int = 42,
+    random_state: int,
 ) -> LayerClusters:
     """
     Return a dictionary of label -> list of ClusterRecord after dimensionality reduction.
