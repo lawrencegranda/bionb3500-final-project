@@ -16,6 +16,9 @@ from scripts.extract_embeddings import (  # pylint: disable=C0413, E0401
     run_extract_embeddings,
 )
 from scripts.plot_clusters import run_plot_clusters  # pylint: disable=C0413, E0401
+from scripts.evaluate_metrics import (  # pylint: disable=C0413, E0401
+    run_evaluate_metrics,
+)
 
 
 def main() -> None:
@@ -61,6 +64,18 @@ def main() -> None:
         print("-" * 70)
         run_plot_clusters(
             dataset_path, model_name, output_dir, layers_to_plot, random_state
+        )
+
+        # Step 3: Evaluate metrics
+        print("\n" + "-" * 70)
+        print(" " * 25 + "STEP 3: EVALUATE METRICS")
+        print("-" * 70)
+        run_evaluate_metrics(
+            dataset_path,
+            model_name,
+            args.config.paths.metrics_dir,
+            layers_to_plot,
+            random_state,
         )
 
     # Final summary

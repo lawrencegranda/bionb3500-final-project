@@ -54,6 +54,7 @@ This automatically:
 - Summarizes the dataset statistics
 - Extracts embeddings for all configured models
 - Generates clustering visualizations
+- Evaluates clustering metrics and exports to CSV
 
 **OR** run individual steps:
 
@@ -66,13 +67,27 @@ python -m scripts.extract_embeddings -d config/data.yaml --model bert-base-uncas
 
 # Generate clustering plots for a specific model
 python -m scripts.plot_clusters -d config/data.yaml --model bert-base-uncased
+
+# Evaluate clustering metrics for a specific model
+python -m scripts.evaluate_metrics -d config/data.yaml --model bert-base-uncased
 ```
 
 ### 5. View Results
 
-- **Plots**: `results/plots/{model_name}/` - UMAP/t-SNE visualizations
-- **Metrics**: `results/metrics/` - Clustering quality metrics (if computed)
+- **Plots**: `results/plots/{model_name}/` - UMAP/t-SNE visualizations by lemma
+- **Metrics**: `results/metrics/{model_name}_metrics.csv` - Clustering quality metrics per layer
 - **Database**: `data/dataset.db` - Raw sentences and embeddings
+
+#### Metrics CSV Format
+
+The metrics CSV contains one row per (lemma, layer, metric) combination:
+
+| lemma | layer | metric        | value |
+| ----- | ----- | ------------- | ----- |
+| bank  | 0     | silhouette    | 0.245 |
+| bank  | 0     | adjusted_rand | 0.123 |
+| bank  | 4     | silhouette    | 0.567 |
+| ...   | ...   | ...           | ...   |
 
 ## Interpreting Results
 
@@ -140,6 +155,7 @@ Look for peaks in ARI, NMI, and Silhouette scores in middle-to-upper layers to c
 │   ├── summarise.py        # Summarize dataset statistics
 │   ├── extract_embeddings.py # Extract BERT embeddings
 │   ├── plot_clusters.py    # Generate visualizations
+│   ├── evaluate_metrics.py # Compute and export metrics to CSV
 │   └── run_analysis.py     # Run complete pipeline
 └── src/
     ├── analysis/
