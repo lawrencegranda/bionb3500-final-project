@@ -61,6 +61,7 @@ class ModelConfig:
     model_names: List[str]
     random_state: int
     clustering_layers: Dict[str, List[int]]
+    clustering_methods: List[str]
 
     @staticmethod
     def from_dict(data: dict) -> "ModelConfig":
@@ -70,10 +71,14 @@ class ModelConfig:
         clustering_layers = {k: list(v) for k, v in data["clustering_layers"].items()}
         assert len(clustering_layers) > 0, "Clustering layers must be non-empty"
 
+        # Get clustering methods, default to kmeans only
+        clustering_methods = list(data.get("clustering_methods", ["kmeans"]))
+
         return ModelConfig(
             model_names=model_names,
             random_state=int(data["random_state"]),
             clustering_layers=clustering_layers,
+            clustering_methods=clustering_methods,
         )
 
 

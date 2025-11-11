@@ -1,11 +1,12 @@
 """Evaluate sense separation metrics across layers."""
 
 from abc import ABC, abstractmethod
-from typing import Mapping, Sequence, Optional
+from typing import Mapping, Sequence
 from collections import Counter
 
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, HDBSCAN
+from sklearn.mixture import GaussianMixture
 from sklearn.metrics import (
     silhouette_score,
     davies_bouldin_score,
@@ -35,9 +36,9 @@ class MetricModel(ABC):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
-        """Compute metric score for embeddings, predicted labels, and (if required) true labels."""
+        """Compute metric score for embeddings, predicted labels, and true labels."""
         raise NotImplementedError
 
 
@@ -51,10 +52,10 @@ class SilhouetteMetric(MetricModel):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
         """Compute silhouette score."""
-        return float(silhouette_score(embeddings, true_labels))
+        return float(silhouette_score(embeddings, pred_labels))
 
 
 class AdjustedRandMetric(MetricModel):  # pylint: disable=R0903
@@ -67,9 +68,9 @@ class AdjustedRandMetric(MetricModel):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
-        """Compute adjusted rand index (requires true labels)."""
+        """Compute adjusted rand index."""
         return float(adjusted_rand_score(true_labels, pred_labels))
 
 
@@ -83,9 +84,9 @@ class NormalizedMutualInfoMetric(MetricModel):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
-        """Compute normalized mutual information (requires true labels)."""
+        """Compute normalized mutual information."""
         return float(normalized_mutual_info_score(true_labels, pred_labels))
 
 
@@ -99,10 +100,10 @@ class DaviesBouldinMetric(MetricModel):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
         """Compute Davies-Bouldin index."""
-        return float(davies_bouldin_score(embeddings, true_labels))
+        return float(davies_bouldin_score(embeddings, pred_labels))
 
 
 class CalinskiHarabaszMetric(MetricModel):  # pylint: disable=R0903
@@ -115,19 +116,20 @@ class CalinskiHarabaszMetric(MetricModel):  # pylint: disable=R0903
         self,
         embeddings: np.ndarray,
         true_labels: np.ndarray,
-        pred_labels: Optional[np.ndarray] = None,
+        pred_labels: np.ndarray,
     ) -> float:
         """Compute Calinski-Harabasz index."""
-        return float(calinski_harabasz_score(embeddings, true_labels))
+        return float(calinski_harabasz_score(embeddings, pred_labels))
 
 
-def _cluster_and_assign_labels(
+def _cluster_kmeans(
     embeddings: np.ndarray,
     true_labels: np.ndarray,
     random_state: int,
 ) -> np.ndarray:
     """
     Perform KMeans clustering and map cluster IDs to sense labels via majority voting.
+    NOTE: This gives KMeans an advantage by providing the exact number of clusters.
     """
     n_clusters = len(set(true_labels))
 
@@ -135,11 +137,88 @@ def _cluster_and_assign_labels(
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
     cluster_ids = kmeans.fit_predict(embeddings)
 
-    # Map each cluster ID to the majority sense label in that cluster
+    return _map_clusters_to_labels(cluster_ids, true_labels)
+
+
+def _cluster_random(
+    embeddings: np.ndarray,
+    true_labels: np.ndarray,
+    random_state: int,
+) -> np.ndarray:
+    """
+    Baseline: Random clustering (worst-case scenario).
+    """
+    n_samples = len(embeddings)
+    n_clusters = len(set(true_labels))
+
+    # Set random seed for reproducibility
+    np.random.seed(random_state)
+    cluster_ids = np.random.randint(0, n_clusters, size=n_samples)
+
+    return _map_clusters_to_labels(cluster_ids, true_labels)
+
+
+def _cluster_hdbscan(
+    embeddings: np.ndarray,
+    true_labels: np.ndarray,
+    random_state: int,  # pylint: disable=W0613
+) -> np.ndarray:
+    """
+    HDBSCAN clustering - does NOT require knowing n_clusters.
+    More realistic evaluation of unsupervised clustering.
+
+    Note: HDBSCAN is deterministic and doesn't use random_state.
+    """
+    # HDBSCAN automatically determines the number of clusters
+    clusterer = HDBSCAN(min_cluster_size=2, min_samples=1)
+    cluster_ids = clusterer.fit_predict(embeddings)
+
+    # HDBSCAN uses -1 for noise points; assign them to nearest cluster
+    if -1 in cluster_ids:
+        # Assign noise points to cluster 0 (simplest approach)
+        cluster_ids = np.where(cluster_ids == -1, 0, cluster_ids)
+
+    return _map_clusters_to_labels(cluster_ids, true_labels)
+
+
+def _cluster_gmm(
+    embeddings: np.ndarray,
+    true_labels: np.ndarray,
+    random_state: int,
+) -> np.ndarray:
+    """
+    Gaussian Mixture Model clustering.
+    NOTE: Like KMeans, this gives GMM the exact number of components.
+    Use with caution for evaluation.
+    """
+    n_clusters = len(set(true_labels))
+
+    gmm = GaussianMixture(
+        n_components=n_clusters,
+        random_state=random_state,
+        covariance_type="full",
+        n_init=10,
+    )
+    cluster_ids = gmm.fit_predict(embeddings)
+
+    return _map_clusters_to_labels(cluster_ids, true_labels)
+
+
+def _map_clusters_to_labels(
+    cluster_ids: np.ndarray,
+    true_labels: np.ndarray,
+) -> np.ndarray:
+    """
+    Map cluster IDs to sense labels via majority voting.
+    This allows comparing different cluster assignments to ground truth.
+    """
+    unique_clusters = set(cluster_ids)
     cluster_to_label = {}
-    for cluster_id in range(n_clusters):
+
+    for cluster_id in unique_clusters:
         # Get indices of all samples in this cluster
         cluster_mask = cluster_ids == cluster_id
+
         # Get the true labels for these samples
         labels_in_cluster = true_labels[cluster_mask]
 
@@ -161,6 +240,7 @@ def make_metrics(
     database: Database,
     metric_classes: Sequence[type[MetricModel]],
     random_state: int,
+    clustering_method: str,
 ) -> Mapping[str, LemmaMetrics]:
     """
     Return a dictionary of lemma -> LemmaMetrics after computing metrics.
@@ -176,7 +256,12 @@ def make_metrics(
 
         for layer, layer_embeddings in lemma_embeddings.layers.items():
             result[lemma].layers[layer] = _compute_layer_metrics(
-                lemma, layer, layer_embeddings, metric_classes, random_state
+                lemma,
+                layer,
+                layer_embeddings,
+                metric_classes,
+                random_state,
+                clustering_method,
             )
 
     return result
@@ -188,6 +273,7 @@ def _compute_layer_metrics(
     layer_embeddings: LayerEmbeddings,
     metric_classes: Sequence[type[MetricModel]],
     random_state: int,
+    clustering_method: str,
 ) -> LayerMetrics:
     """
     Compute all metrics for a single layer.
@@ -195,7 +281,7 @@ def _compute_layer_metrics(
 
     For ARI and NMI:
     - True labels = sense labels (ground truth from the data)
-    - Predicted labels = KMeans clustering results
+    - Predicted labels = Clustering algorithm results
     """
     result: LayerMetrics = LayerMetrics(layer=layer)
 
@@ -214,22 +300,29 @@ def _compute_layer_metrics(
     true_labels = np.array([rec[0] for rec in recs])
     embeddings = np.array([rec[1] for rec in recs])
 
+    # Select clustering method
+    clustering_methods = {
+        "kmeans": _cluster_kmeans,
+        "random": _cluster_random,
+        "hdbscan": _cluster_hdbscan,
+        "gmm": _cluster_gmm,
+    }
+
+    if clustering_method not in clustering_methods:
+        raise ValueError(f"Unknown clustering method: {clustering_method}")
+
+    cluster_func = clustering_methods[clustering_method]
+
     # Perform clustering and assign labels via majority voting
     # This maps cluster IDs to actual sense labels for meaningful comparison
-    predicted_labels = _cluster_and_assign_labels(embeddings, true_labels, random_state)
+    predicted_labels = cluster_func(embeddings, true_labels, random_state)
 
     # Compute each metric
     for metric_class in metric_classes:
         metric = metric_class()
 
-        # For supervised metrics (ARI, NMI), use predicted vs. true labels
-        if metric.name in ("adjusted_rand", "normalized_mutual_info"):
-            value = metric.compute(
-                embeddings, true_labels, pred_labels=predicted_labels
-            )
-        else:
-            # For unsupervised metrics, use true labels directly
-            value = metric.compute(embeddings, true_labels)
+        # All metrics now use predicted labels for consistent evaluation
+        value = metric.compute(embeddings, true_labels, pred_labels=predicted_labels)
 
         metric_record = MetricRecord(
             lemma=lemma,

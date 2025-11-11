@@ -25,6 +25,7 @@ def run_evaluate_metrics(
     model_name: str,
     output_dir: Path,
     layers_to_evaluate: Sequence[int],
+    clustering_methods: Sequence[str],
     random_state: int = 42,
 ) -> None:
     """
@@ -36,6 +37,7 @@ def run_evaluate_metrics(
         output_dir: Directory to save metrics CSV
         layers_to_evaluate: List of layer indices to evaluate
         random_state: Random seed for reproducibility
+        clustering_methods: List of clustering methods to evaluate (default: ['kmeans'])
     """
     if not dataset_path.exists():
         print(f"Error: Database file not found at {dataset_path}")
@@ -50,6 +52,7 @@ def run_evaluate_metrics(
     print(f"Database: {dataset_path}")
     print(f"Model: {model_name}")
     print(f"Layers to evaluate: {layers_to_evaluate}")
+    print(f"Clustering methods: {clustering_methods}")
     print(f"Output directory: {output_dir}")
     print(f"Random state: {random_state}")
     print()
@@ -63,64 +66,72 @@ def run_evaluate_metrics(
     print(f"Computing metrics: {', '.join(metric_models.keys())}")
     print("-" * 50)
 
-    # Compute metrics for all lemmas
-    metrics_by_lemma = make_metrics(database, all_metric_classes, random_state)
+    # Evaluate each clustering method
+    for clustering_method in clustering_methods:
+        print(f"\n{'=' * 50}")
+        print(f"CLUSTERING METHOD: {clustering_method.upper()}")
+        print("=" * 50)
 
-    # Organize data by metric
-    # Structure: metric_name -> list of {lemma, layer, value}
-    metrics_data = {metric_name: [] for metric_name in metric_models.keys()}
+        # Compute metrics for all lemmas
+        metrics_by_lemma = make_metrics(
+            database, all_metric_classes, random_state, clustering_method
+        )
 
-    for lemma, lemma_metrics in metrics_by_lemma.items():
-        print(f"\nProcessing lemma: {lemma}")
+        # Organize data by metric
+        # Structure: metric_name -> list of {lemma, layer, value}
+        metrics_data = {metric_name: [] for metric_name in metric_models.keys()}
 
-        for layer, layer_metrics in lemma_metrics.layers.items():
-            # Only include specified layers
-            if layers_to_evaluate and layer not in layers_to_evaluate:
+        for lemma, lemma_metrics in metrics_by_lemma.items():
+            print(f"\nProcessing lemma: {lemma}")
+
+            for layer, layer_metrics in lemma_metrics.layers.items():
+                # Only include specified layers
+                if layers_to_evaluate and layer not in layers_to_evaluate:
+                    continue
+
+                for metric_name, metric_record in layer_metrics.labels.items():
+                    metrics_data[metric_name].append(
+                        {
+                            "lemma": metric_record.lemma,
+                            "layer": metric_record.layer,
+                            "value": metric_record.value,
+                        }
+                    )
+                    print(
+                        f"  Layer {layer:2d} | {metric_name:25s}: {metric_record.value:.4f}"
+                    )
+
+        # Create model-specific directory with clustering method subdirectory
+        model_output_dir = output_dir / model_name / clustering_method
+        model_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write one CSV per metric
+        total_files = 0
+        for metric_name, rows in metrics_data.items():
+            if not rows:
                 continue
 
-            for metric_name, metric_record in layer_metrics.labels.items():
-                metrics_data[metric_name].append(
-                    {
-                        "lemma": metric_record.lemma,
-                        "layer": metric_record.layer,
-                        "value": metric_record.value,
-                    }
-                )
-                print(
-                    f"  Layer {layer:2d} | {metric_name:25s}: {metric_record.value:.4f}"
-                )
+            # Sort by lemma first, then by layer
+            sorted_rows = sorted(rows, key=lambda x: (x["lemma"], x["layer"]))
+
+            output_file = model_output_dir / f"{metric_name}.csv"
+            with output_file.open("w", newline="", encoding="utf-8") as csvfile:
+                fieldnames = ["lemma", "layer", "value"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()
+                writer.writerows(sorted_rows)
+
+            print(f"\nSaved {metric_name}: {output_file}")
+            total_files += 1
 
     database.close()
-
-    # Create model-specific directory
-    model_output_dir = output_dir / model_name
-    model_output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Write one CSV per metric
-    total_files = 0
-    for metric_name, rows in metrics_data.items():
-        if not rows:
-            continue
-
-        # Sort by lemma first, then by layer
-        sorted_rows = sorted(rows, key=lambda x: (x["lemma"], x["layer"]))
-
-        output_file = model_output_dir / f"{metric_name}.csv"
-        with output_file.open("w", newline="", encoding="utf-8") as csvfile:
-            fieldnames = ["lemma", "layer", "value"]
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
-            writer.writeheader()
-            writer.writerows(sorted_rows)
-
-        print(f"\nSaved {metric_name}: {output_file}")
-        total_files += 1
 
     print("\n" + "=" * 50)
     print("METRICS EVALUATION COMPLETE")
     print("=" * 50)
-    print(f"Results saved to: {model_output_dir}")
-    print(f"Total files: {total_files}")
+    print(f"Results saved to: {output_dir / model_name}")
+    print(f"Clustering methods evaluated: {', '.join(clustering_methods)}")
     print("=" * 50)
 
 
@@ -131,11 +142,15 @@ def main() -> None:
     # Get layers from config or use all layers
     layers_to_evaluate = args.config.model.clustering_layers.get(args.model)
 
+    # Get clustering methods from config
+    clustering_methods = args.config.model.clustering_methods
+
     run_evaluate_metrics(
         args.config.paths.dataset_path,
         args.model,
         args.config.paths.metrics_dir,
         layers_to_evaluate,
+        clustering_methods,
         args.config.model.random_state,
     )
 
