@@ -72,7 +72,19 @@ python -m scripts.plot_clusters -d config/data.yaml --model bert-base-uncased
 python -m scripts.evaluate_metrics -d config/data.yaml --model bert-base-uncased
 ```
 
-### 5. View Results
+### 5. Generate Metric Plots
+
+After running the analysis and generating CSV files with metrics, create visualization plots:
+
+```bash
+poetry run python scripts/plot_metrics.py -d config/data.yaml
+```
+
+This generates one plot per (lemma, metric) combination showing how metrics change across layers for different models and clustering methods. Plots are saved to `results/plots/metrics/`.
+
+See `scripts/README_plot_metrics.md` for details.
+
+### 6. View Results
 
 - **Plots**: `results/plots/{model_name}/` - UMAP/t-SNE visualizations by lemma
 - **Metrics**: `results/metrics/{model_name}/` - One CSV per metric, sorted by lemma and layer
@@ -94,15 +106,15 @@ results/metrics/
     └── ...
 ```
 
-Each CSV contains:
+Each CSV contains results from multiple random seeds and their median:
 
-| lemma | layer | value |
-| ----- | ----- | ----- |
-| bank  | 0     | 0.245 |
-| bank  | 4     | 0.567 |
-| bank  | 8     | 0.632 |
-| bat   | 0     | 0.314 |
-| ...   | ...   | ...   |
+| lemma | layer | seed_42 | seed_123 | seed_456 | ... | median |
+| ----- | ----- | ------- | -------- | -------- | --- | ------ |
+| bank  | 0     | 0.241   | 0.248    | 0.245    | ... | 0.245  |
+| bank  | 4     | 0.562   | 0.571    | 0.567    | ... | 0.567  |
+| bank  | 8     | 0.628   | 0.635    | 0.632    | ... | 0.632  |
+| bat   | 0     | 0.311   | 0.318    | 0.314    | ... | 0.314  |
+| ...   | ...   | ...     | ...      | ...      | ... | ...    |
 
 ## Interpreting Results
 
