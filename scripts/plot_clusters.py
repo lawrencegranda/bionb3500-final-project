@@ -196,7 +196,7 @@ def main() -> None:
         args.model,
         args.config.paths.plots_dir,
         args.config.model.clustering_layers.get(args.model),
-        args.config.model.random_state,
+        args.config.model.random_states[0],  # Use first seed for plotting
     )
 
 

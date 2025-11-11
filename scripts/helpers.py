@@ -59,7 +59,7 @@ class ModelConfig:
     """Configuration for model-related settings."""
 
     model_names: List[str]
-    random_state: int
+    random_states: List[int]
     clustering_layers: Dict[str, List[int]]
     clustering_methods: List[str]
 
@@ -74,9 +74,11 @@ class ModelConfig:
         # Get clustering methods, default to kmeans only
         clustering_methods = list(data.get("clustering_methods", ["kmeans"]))
 
+        random_states = list(data["random_states"])
+
         return ModelConfig(
             model_names=model_names,
-            random_state=int(data["random_state"]),
+            random_states=random_states,
             clustering_layers=clustering_layers,
             clustering_methods=clustering_methods,
         )

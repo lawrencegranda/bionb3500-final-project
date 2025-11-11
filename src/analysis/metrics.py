@@ -193,13 +193,19 @@ def _cluster_gmm(
     """
     n_clusters = len(set(true_labels))
 
+    # Convert to float64 for better numerical accuracy
+    embeddings_64 = embeddings.astype(np.float64)
+
+    # Add regularization to prevent singular covariance matrices
     gmm = GaussianMixture(
         n_components=n_clusters,
         random_state=random_state,
         covariance_type="full",
         n_init=10,
+        reg_covar=1e-6,  # Add regularization for numerical stability
+        max_iter=100,
     )
-    cluster_ids = gmm.fit_predict(embeddings)
+    cluster_ids = gmm.fit_predict(embeddings_64)
 
     return cluster_ids
 
@@ -315,14 +321,23 @@ def _compute_layer_metrics(
 
     # Perform clustering and assign labels via majority voting
     # This maps cluster IDs to actual sense labels for meaningful comparison
-    predicted_labels = cluster_func(embeddings, true_labels, random_state)
+    failed = False
+
+    try:
+        predicted_labels = cluster_func(embeddings, true_labels, random_state)
+    except ValueError as e:
+        print(f"Warning: {e}")
+        failed = True
+        predicted_labels = np.zeros(len(embeddings))
 
     # Compute each metric
     for metric_class in metric_classes:
         metric = metric_class()
 
         # All metrics now use predicted labels for consistent evaluation
-        if metric.name in ("adjusted_rand", "normalized_mutual_info"):
+        if failed:
+            value = np.nan
+        elif metric.name in ("adjusted_rand", "normalized_mutual_info"):
             value = metric.compute(
                 embeddings,
                 true_labels,

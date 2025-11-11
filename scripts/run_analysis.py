@@ -29,7 +29,7 @@ def main() -> None:
     dataset_path = args.config.paths.dataset_path
     model_names = args.config.model.model_names
     output_dir = args.config.paths.plots_dir
-    random_state = args.config.model.random_state
+    random_states = args.config.model.random_states
     clustering_layers = args.config.model.clustering_layers
     clustering_methods = args.config.model.clustering_methods
 
@@ -37,6 +37,7 @@ def main() -> None:
     print(" " * 20 + "ANALYSIS PIPELINE")
     print("=" * 70)
     print(f"Database: {dataset_path}")
+    print(f"Random states: {random_states}")
     print("=" * 70)
     print()
 
@@ -59,25 +60,27 @@ def main() -> None:
         print("-" * 70)
         run_extract_embeddings(dataset_path, model_name)
 
-        # Step 2: Plot clusters
+        # Step 2: Plot clusters (only once with first seed)
         print("\n" + "-" * 70)
         print(" " * 25 + "STEP 2: PLOT CLUSTERS")
         print("-" * 70)
+        print(f"Using seed {random_states[0]} for plotting")
         run_plot_clusters(
-            dataset_path, model_name, output_dir, layers_to_plot, random_state
+            dataset_path, model_name, output_dir, layers_to_plot, random_states[0]
         )
 
-        # Step 3: Evaluate metrics
+        # Step 3: Evaluate metrics (with all seeds)
         print("\n" + "-" * 70)
         print(" " * 25 + "STEP 3: EVALUATE METRICS")
         print("-" * 70)
+        print(f"Evaluating with {len(random_states)} seeds: {random_states}")
         run_evaluate_metrics(
             dataset_path,
             model_name,
             args.config.paths.metrics_dir,
             layers_to_plot,
             clustering_methods,
-            random_state,
+            random_states,
         )
 
     # Final summary
@@ -85,6 +88,7 @@ def main() -> None:
     print(" " * 20 + "PIPELINE COMPLETE!")
     print("=" * 70)
     print("\nAll analysis steps completed successfully!")
+    print(f"Seeds evaluated: {len(random_states)}")
     print("=" * 70)
 
 

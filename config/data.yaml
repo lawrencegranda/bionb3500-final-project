@@ -30,13 +30,13 @@ model_names:
   - bert-base-uncased
   - distilbert-base-uncased
 
-# Random state to use for clustering
-random_state: 42
+# Random states to use for clustering (multiple seeds for robust results)
+random_states: [42, 123, 456, 789, 1011, 1213, 1415]
 
 # Clustering methods to evaluate (kmeans, random, hdbscan, gmm)
 clustering_methods:
-  - kmeans
   - random
+  - kmeans
   - hdbscan
   - gmm
 
