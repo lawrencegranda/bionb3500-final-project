@@ -21,6 +21,7 @@ nltk = "^3.9.2"
 pylint = "^4.0.2"
 black = "^25.9.0"
 cloc = "^0.2.5"
+hdbscan = "^0.8.40"
 
 
 [build-system]
