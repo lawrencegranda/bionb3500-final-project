@@ -31,6 +31,7 @@ def main() -> None:
     output_dir = args.config.paths.plots_dir
     random_state = args.config.model.random_state
     clustering_layers = args.config.model.clustering_layers
+    clustering_methods = args.config.model.clustering_methods
 
     print("=" * 70)
     print(" " * 20 + "ANALYSIS PIPELINE")
@@ -75,6 +76,7 @@ def main() -> None:
             model_name,
             args.config.paths.metrics_dir,
             layers_to_plot,
+            clustering_methods,
             random_state,
         )
 

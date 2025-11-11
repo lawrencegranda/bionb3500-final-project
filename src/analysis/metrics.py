@@ -137,7 +137,7 @@ def _cluster_kmeans(
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
     cluster_ids = kmeans.fit_predict(embeddings)
 
-    return _map_clusters_to_labels(cluster_ids, true_labels)
+    return cluster_ids
 
 
 def _cluster_random(
@@ -155,7 +155,7 @@ def _cluster_random(
     np.random.seed(random_state)
     cluster_ids = np.random.randint(0, n_clusters, size=n_samples)
 
-    return _map_clusters_to_labels(cluster_ids, true_labels)
+    return cluster_ids
 
 
 def _cluster_hdbscan(
@@ -178,7 +178,7 @@ def _cluster_hdbscan(
         # Assign noise points to cluster 0 (simplest approach)
         cluster_ids = np.where(cluster_ids == -1, 0, cluster_ids)
 
-    return _map_clusters_to_labels(cluster_ids, true_labels)
+    return cluster_ids
 
 
 def _cluster_gmm(
@@ -201,7 +201,7 @@ def _cluster_gmm(
     )
     cluster_ids = gmm.fit_predict(embeddings)
 
-    return _map_clusters_to_labels(cluster_ids, true_labels)
+    return cluster_ids
 
 
 def _map_clusters_to_labels(
@@ -322,7 +322,14 @@ def _compute_layer_metrics(
         metric = metric_class()
 
         # All metrics now use predicted labels for consistent evaluation
-        value = metric.compute(embeddings, true_labels, pred_labels=predicted_labels)
+        if metric.name in ("adjusted_rand", "normalized_mutual_info"):
+            value = metric.compute(
+                embeddings,
+                true_labels,
+                _map_clusters_to_labels(predicted_labels, true_labels),
+            )
+        else:
+            value = metric.compute(embeddings, true_labels, predicted_labels)
 
         metric_record = MetricRecord(
             lemma=lemma,
