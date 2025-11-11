@@ -14,12 +14,14 @@ from sklearn.metrics import (
     adjusted_rand_score,
     normalized_mutual_info_score,
 )
+from scipy.spatial.distance import cdist
 
 from src.types.metrics import (
     LemmaMetrics,
     LayerMetrics,
     MetricRecord,
 )
+
 from src.types.embeddings import LayerEmbeddings
 from src.dataset import Database
 
@@ -160,7 +162,7 @@ def _cluster_random(
 
 def _cluster_hdbscan(
     embeddings: np.ndarray,
-    true_labels: np.ndarray,
+    true_labels: np.ndarray,  # pylint: disable=W0613
     random_state: int,  # pylint: disable=W0613
 ) -> np.ndarray:
     """
@@ -175,8 +177,21 @@ def _cluster_hdbscan(
 
     # HDBSCAN uses -1 for noise points; assign them to nearest cluster
     if -1 in cluster_ids:
-        # Assign noise points to cluster 0 (simplest approach)
-        cluster_ids = np.where(cluster_ids == -1, 0, cluster_ids)
+        embeddings_non_noise = embeddings[cluster_ids != -1]
+        embeddings_noise = embeddings[cluster_ids == -1]
+        cluster_labels_non_noise = cluster_ids[cluster_ids != -1]
+        centroids = np.array(
+            [
+                embeddings_non_noise[cluster_labels_non_noise == cid].mean(axis=0)
+                for cid in np.unique(cluster_labels_non_noise)
+            ]
+        )
+        unique_cluster_ids = np.unique(cluster_labels_non_noise)
+        dists = cdist(embeddings_noise, centroids)
+        nearest = np.argmin(dists, axis=1)
+        cluster_ids_new = cluster_ids.copy()
+        cluster_ids_new[cluster_ids == -1] = unique_cluster_ids[nearest]
+        cluster_ids = cluster_ids_new
 
     return cluster_ids
 
