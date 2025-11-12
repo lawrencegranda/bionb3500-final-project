@@ -84,7 +84,7 @@ def _synsets_by_glosses(lemma: str, gloss_set: Set[str]) -> Set[SenseType]:
     """
     synsets = set()
 
-    for ss in wn.synsets(lemma, pos=wn.NOUN):
+    for ss in wn.synsets(lemma):
         for gloss in gloss_set:
             if gloss in ss.definition().lower():
                 synsets.add(ss)
