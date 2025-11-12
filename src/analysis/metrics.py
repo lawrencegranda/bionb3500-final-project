@@ -5,7 +5,9 @@ from typing import Mapping, Sequence
 from collections import Counter
 
 import numpy as np
-from sklearn.cluster import KMeans, HDBSCAN
+from hdbscan import HDBSCAN
+from sklearn.cluster import KMeans
+
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import (
     silhouette_score,
@@ -57,7 +59,7 @@ class SilhouetteMetric(MetricModel):  # pylint: disable=R0903
         pred_labels: np.ndarray,
     ) -> float:
         """Compute silhouette score."""
-        return float(silhouette_score(embeddings, pred_labels))
+        return float(silhouette_score(embeddings, pred_labels, metric="cosine"))
 
 
 class AdjustedRandMetric(MetricModel):  # pylint: disable=R0903
@@ -154,8 +156,8 @@ def _cluster_random(
     n_clusters = len(set(true_labels))
 
     # Set random seed for reproducibility
-    np.random.seed(random_state)
-    cluster_ids = np.random.randint(0, n_clusters, size=n_samples)
+    rng = np.random.default_rng(random_state)
+    cluster_ids = rng.integers(0, n_clusters, size=n_samples)
 
     return cluster_ids
 
@@ -176,7 +178,9 @@ def _cluster_hdbscan(
     cluster_ids = clusterer.fit_predict(embeddings)
 
     # HDBSCAN uses -1 for noise points; assign them to nearest cluster
-    if -1 in cluster_ids:
+    if np.all(cluster_ids == -1):
+        raise ValueError("No clusters found")
+    elif -1 in cluster_ids:
         embeddings_non_noise = embeddings[cluster_ids != -1]
         embeddings_noise = embeddings[cluster_ids == -1]
         cluster_labels_non_noise = cluster_ids[cluster_ids != -1]
@@ -340,6 +344,11 @@ def _compute_layer_metrics(
 
     try:
         predicted_labels = cluster_func(embeddings, true_labels, random_state)
+        if len(np.unique(predicted_labels)) < 2:
+            raise ValueError(
+                f"No clusters found for lemma {lemma}, layer {layer}, "
+                f"clustering method {clustering_method}"
+            )
     except ValueError as e:
         print(f"Warning: {e}")
         failed = True
@@ -356,7 +365,7 @@ def _compute_layer_metrics(
             value = metric.compute(
                 embeddings,
                 true_labels,
-                _map_clusters_to_labels(predicted_labels, true_labels),
+                predicted_labels,
             )
         else:
             value = metric.compute(embeddings, true_labels, predicted_labels)
