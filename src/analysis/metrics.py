@@ -5,9 +5,7 @@ from typing import Mapping, Sequence
 from collections import Counter
 
 import numpy as np
-from hdbscan import HDBSCAN
-from sklearn.cluster import KMeans
-
+from sklearn.cluster import KMeans, HDBSCAN
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import (
     silhouette_score,
