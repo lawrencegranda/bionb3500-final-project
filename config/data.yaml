@@ -24,7 +24,7 @@ metrics_dir: results/metrics
 plots_dir: results/plots
 
 # Maximum number of sentences to collect for each lemma
-max_sentences: 1000
+max_sentences: 250
 
 # List of model names to use for embeddings
 model_names:
