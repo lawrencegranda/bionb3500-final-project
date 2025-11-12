@@ -2,6 +2,11 @@
   "bank": {
     "finance": [
       "bank.n.09",
+      "bank.v.02",
+      "bank.v.03",
+      "bank.v.04",
+      "bank.v.05",
+      "deposit.v.02",
       "depository_financial_institution.n.01",
       "savings_bank.n.02"
     ],
@@ -15,7 +20,8 @@
     ],
     "sports": [
       "bat.n.02",
-      "bat.n.05"
+      "bat.n.05",
+      "bat.v.01"
     ]
   },
   "pitch": {
@@ -23,8 +29,20 @@
       "pitch.n.01"
     ],
     "sports": [
+      "deliver.v.11",
+      "flip.v.06",
       "pitch.n.02",
-      "pitch.n.10"
+      "pitch.n.10",
+      "pitch.v.10"
+    ]
+  },
+  "run": {
+    "election": [
+      "campaign.v.01",
+      "political_campaign.n.01"
+    ],
+    "management": [
+      "operate.v.01"
     ]
   }
 }
