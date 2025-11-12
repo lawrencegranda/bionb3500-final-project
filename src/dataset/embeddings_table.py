@@ -87,6 +87,12 @@ class EmbeddingsTable:
         query = f"SELECT * FROM {self.TABLE_NAME}"
         return pd.read_sql_query(query, self._config.connection)
 
+    def reset(self) -> None:
+        """Reset the embeddings table."""
+        self._config.connection.execute(f"DELETE FROM {self.TABLE_NAME}")
+        self._config.connection.commit()
+        _ensure_schema(self._config.connection, self.TABLE_NAME)
+
     def process_dataset(self, sentences_table: SentencesTable) -> None:
         """Process all sentences in a sentences_table and extract embeddings."""
         query = f"SELECT id, lemma, text FROM {sentences_table.TABLE_NAME}"

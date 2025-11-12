@@ -20,8 +20,9 @@ class Database:
         self._conn = connection
         self.sentences_table = SentencesTable(self._conn)
 
-        if model_name:
-            self.embeddings_table = EmbeddingsTable(self._conn, model_name)
+        self.embeddings_table = (
+            EmbeddingsTable(self._conn, model_name) if model_name else None
+        )
 
     @classmethod
     def from_db(
@@ -30,6 +31,12 @@ class Database:
         """Load an existing database."""
         connection = sqlite3.connect(Path(db_path))
         return cls(connection, model_name)
+
+    def reset(self) -> None:
+        """Reset the database."""
+        self.sentences_table.reset()
+        if self.embeddings_table:
+            self.embeddings_table.reset()
 
     def close(self) -> None:
         """Close the database connection."""

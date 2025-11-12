@@ -70,6 +70,12 @@ class SentencesTable:
             ),
         )
 
+    def reset(self) -> None:
+        """Reset the sentences table."""
+        self._conn.execute(f"DELETE FROM {self.TABLE_NAME}")
+        self._conn.commit()
+        _ensure_schema(self._conn, self.TABLE_NAME)
+
     def add_sentences(
         self,
         sentences: Sequence[SentenceRecord],
