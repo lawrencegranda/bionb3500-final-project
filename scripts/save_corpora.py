@@ -62,12 +62,20 @@ def main() -> None:
         sense_map_payload = json.load(handle)
     sense_map = SenseMap.from_dict(sense_map_payload)
 
-    collected = _collect_sentences(wn_key_type, corpora_paths, sense_map, max_sentences)
+    # Reset the sentences table
+    with Database.from_db(dataset_path, model_name) as database:
+        sentences_table = database.sentences_table
 
-    database = Database.from_db(dataset_path, model_name)
-    sentences_table = database.sentences_table
-    sentences_table.add_sentences(collected)
-    database.close()
+        print("Resetting database...")
+        database.reset()
+
+        print("Collecting sentences...")
+        collected = _collect_sentences(
+            wn_key_type, corpora_paths, sense_map, max_sentences
+        )
+
+        print("Adding sentences to table...")
+        sentences_table.add_sentences(collected)
 
     print(f"Persisted {len(collected)} sentences to {dataset_path}")
 

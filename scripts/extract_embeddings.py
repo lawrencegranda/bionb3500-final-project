@@ -35,6 +35,7 @@ def run_extract_embeddings(
         embeddings_table = database.embeddings_table
 
         print("Extracting embeddings...")
+        embeddings_table.reset()
         embeddings_table.process_dataset(sentences_table)
 
         print(f"Done! Embeddings saved to {db_path}.")
