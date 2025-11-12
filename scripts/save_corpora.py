@@ -38,10 +38,7 @@ def _collect_sentences(
                 limited_sentences = sentence_list[:max_sentences]
 
             print(
-                "Collected %d sentences for lemma %s, label %s",
-                len(limited_sentences),
-                lemma,
-                label,
+                f"Collected {len(limited_sentences)} sentences for lemma {lemma}, label {label}"
             )
             records.extend(limited_sentences)
 
