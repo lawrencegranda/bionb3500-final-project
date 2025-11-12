@@ -3,6 +3,10 @@ targets:
     senses:
       finance: ["financ", "bank", "money"]
       river: ["river", "water"]
+  - word: run
+    senses:
+      election: ["office"]
+      management: ["project"]
   - word: bat
     senses:
       animal: ["animal", "mammal"]
