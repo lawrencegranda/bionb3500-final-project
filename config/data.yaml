@@ -41,7 +41,6 @@ clustering_methods:
   - kmeans++
   - gmm
   - agglomerative
-  - spectral
 
 # Layers to use for clustering
 clustering_layers:

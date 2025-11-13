@@ -278,6 +278,8 @@ def run_plot_metrics(
     clustering_methods: List[str],
 ) -> None:
     """Run the plot metrics script."""
+    output_dir = output_dir / "metrics"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Get all lemmas and metrics
     lemmas, metrics = get_all_lemmas_and_metrics(metrics_dir)
@@ -325,8 +327,7 @@ def main() -> None:
     clustering_methods = args.config.model.clustering_methods
 
     # Create output directory for metric plots
-    output_dir = Path("results/plots/metrics")
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = args.config.paths.plots_dir
 
     print("=" * 70)
     print(" " * 20 + "PLOTTING METRICS")

@@ -213,32 +213,12 @@ def _cluster_agglomerative(
     return cluster_ids
 
 
-def _cluster_spectral(
-    embeddings: np.ndarray,
-    n_clusters: int,
-    random_state: int,
-) -> np.ndarray:
-    """
-    Perform Spectral Clustering.
-    """
-    spectral = SpectralClustering(
-        n_clusters=n_clusters,
-        random_state=random_state,
-        affinity="nearest_neighbors",
-        n_init=10,
-        assign_labels="kmeans",
-    )
-    cluster_ids = spectral.fit_predict(embeddings)
-    return cluster_ids
-
-
 _clustering_methods = {
     "random": _cluster_random,
     "kmeans": _cluster_kmeans,
     "kmeans++": _cluster_kmeans_plus_plus,
     "gmm": _cluster_gmm,
     "agglomerative": _cluster_agglomerative,
-    "spectral": _cluster_spectral,
 }
 
 
