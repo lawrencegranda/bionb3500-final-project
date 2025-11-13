@@ -65,6 +65,9 @@ def run_summarise(dataset_path: Path) -> None:
     print("=" * 50)
 
 
+__all__ = ["run_summarise"]
+
+
 def main() -> None:
     """Program entrypoint."""
     args = get_args(__doc__)

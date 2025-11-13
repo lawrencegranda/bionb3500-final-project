@@ -19,6 +19,7 @@ from scripts.plot_clusters import run_plot_clusters  # pylint: disable=C0413, E0
 from scripts.evaluate_metrics import (  # pylint: disable=C0413, E0401
     run_evaluate_metrics,
 )
+from scripts.plot_metrics import run_plot_metrics  # pylint: disable=C0413, E0401
 
 
 def main() -> None:
@@ -32,6 +33,7 @@ def main() -> None:
     random_states = args.config.model.random_states
     clustering_layers = args.config.model.clustering_layers
     clustering_methods = args.config.model.clustering_methods
+    metrics_dir = args.config.paths.metrics_dir
 
     print("=" * 70)
     print(" " * 20 + "ANALYSIS PIPELINE")
@@ -77,11 +79,22 @@ def main() -> None:
         run_evaluate_metrics(
             dataset_path,
             model_name,
-            args.config.paths.metrics_dir,
+            metrics_dir,
             layers_to_plot,
             clustering_methods,
             random_states,
         )
+
+    # Step 4: Plot metrics
+    print("\n" + "-" * 70)
+    print(" " * 25 + "STEP 4: PLOT METRICS")
+    print("-" * 70)
+    run_plot_metrics(
+        metrics_dir,
+        args.config.paths.plots_dir,
+        model_names,
+        clustering_methods,
+    )
 
     # Final summary
     print("\n" + "=" * 70)

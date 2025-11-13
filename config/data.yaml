@@ -34,12 +34,14 @@ model_names:
 # Random states to use for clustering (multiple seeds for robust results)
 random_states: [42, 123, 456, 789, 1011, 1213, 1415]
 
-# Clustering methods to evaluate (kmeans, random, hdbscan, gmm)
+# Clustering methods to evaluate (kmeans, random, gmm)
 clustering_methods:
   - random
   - kmeans
-  - hdbscan
+  - kmeans++
   - gmm
+  - agglomerative
+  - spectral
 
 # Layers to use for clustering
 clustering_layers:

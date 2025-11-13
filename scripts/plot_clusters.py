@@ -187,6 +187,9 @@ def run_plot_clusters(
     print("=" * 50)
 
 
+__all__ = ["run_plot_clusters"]
+
+
 def main() -> None:
     """Program entrypoint."""
     args = get_args(__doc__, get_model_arg=True)

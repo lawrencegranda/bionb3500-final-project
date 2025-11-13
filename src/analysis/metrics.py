@@ -2,10 +2,9 @@
 
 from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
-from collections import Counter
 
 import numpy as np
-from sklearn.cluster import KMeans, HDBSCAN
+from sklearn.cluster import KMeans, AgglomerativeClustering, SpectralClustering
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import (
     silhouette_score,
@@ -14,7 +13,6 @@ from sklearn.metrics import (
     adjusted_rand_score,
     normalized_mutual_info_score,
 )
-from scipy.spatial.distance import cdist
 
 from src.types.metrics import (
     LemmaMetrics,
@@ -124,34 +122,15 @@ class CalinskiHarabaszMetric(MetricModel):  # pylint: disable=R0903
         return float(calinski_harabasz_score(embeddings, pred_labels))
 
 
-def _cluster_kmeans(
-    embeddings: np.ndarray,
-    true_labels: np.ndarray,
-    random_state: int,
-) -> np.ndarray:
-    """
-    Perform KMeans clustering and map cluster IDs to sense labels via majority voting.
-    NOTE: This gives KMeans an advantage by providing the exact number of clusters.
-    """
-    n_clusters = len(set(true_labels))
-
-    # Perform KMeans clustering
-    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
-    cluster_ids = kmeans.fit_predict(embeddings)
-
-    return cluster_ids
-
-
 def _cluster_random(
     embeddings: np.ndarray,
-    true_labels: np.ndarray,
+    n_clusters: int,
     random_state: int,
 ) -> np.ndarray:
     """
     Baseline: Random clustering (worst-case scenario).
     """
     n_samples = len(embeddings)
-    n_clusters = len(set(true_labels))
 
     # Set random seed for reproducibility
     rng = np.random.default_rng(random_state)
@@ -160,56 +139,30 @@ def _cluster_random(
     return cluster_ids
 
 
-def _cluster_hdbscan(
+def _cluster_kmeans(
     embeddings: np.ndarray,
-    true_labels: np.ndarray,  # pylint: disable=W0613
-    random_state: int,  # pylint: disable=W0613
+    n_clusters: int,
+    random_state: int,
 ) -> np.ndarray:
     """
-    HDBSCAN clustering - does NOT require knowing n_clusters.
-    More realistic evaluation of unsupervised clustering.
-
-    Note: HDBSCAN is deterministic and doesn't use random_state.
+    Perform KMeans clustering and map cluster IDs to sense labels via majority voting.
+    NOTE: This gives KMeans an advantage by providing the exact number of clusters.
     """
-    # HDBSCAN automatically determines the number of clusters
-    clusterer = HDBSCAN(min_cluster_size=2, min_samples=1)
-    cluster_ids = clusterer.fit_predict(embeddings)
-
-    # HDBSCAN uses -1 for noise points; assign them to nearest cluster
-    if np.all(cluster_ids == -1):
-        raise ValueError("No clusters found")
-    elif -1 in cluster_ids:
-        embeddings_non_noise = embeddings[cluster_ids != -1]
-        embeddings_noise = embeddings[cluster_ids == -1]
-        cluster_labels_non_noise = cluster_ids[cluster_ids != -1]
-        centroids = np.array(
-            [
-                embeddings_non_noise[cluster_labels_non_noise == cid].mean(axis=0)
-                for cid in np.unique(cluster_labels_non_noise)
-            ]
-        )
-        unique_cluster_ids = np.unique(cluster_labels_non_noise)
-        dists = cdist(embeddings_noise, centroids)
-        nearest = np.argmin(dists, axis=1)
-        cluster_ids_new = cluster_ids.copy()
-        cluster_ids_new[cluster_ids == -1] = unique_cluster_ids[nearest]
-        cluster_ids = cluster_ids_new
+    # Perform KMeans clustering
+    kmeans = KMeans(n_clusters=n_clusters, random_state=random_state, n_init=10)
+    cluster_ids = kmeans.fit_predict(embeddings)
 
     return cluster_ids
 
 
 def _cluster_gmm(
     embeddings: np.ndarray,
-    true_labels: np.ndarray,
+    n_clusters: int,
     random_state: int,
 ) -> np.ndarray:
     """
     Gaussian Mixture Model clustering.
-    NOTE: Like KMeans, this gives GMM the exact number of components.
-    Use with caution for evaluation.
     """
-    n_clusters = len(set(true_labels))
-
     # Convert to float64 for better numerical accuracy
     embeddings_64 = embeddings.astype(np.float64)
 
@@ -227,36 +180,66 @@ def _cluster_gmm(
     return cluster_ids
 
 
-def _map_clusters_to_labels(
-    cluster_ids: np.ndarray,
-    true_labels: np.ndarray,
+def _cluster_kmeans_plus_plus(
+    embeddings: np.ndarray,
+    n_clusters: int,
+    random_state: int,
 ) -> np.ndarray:
     """
-    Map cluster IDs to sense labels via majority voting.
-    This allows comparing different cluster assignments to ground truth.
+    Perform KMeans++ clustering and map cluster IDs to sense labels via majority voting.
+    KMeans++ controls initialization, but otherwise equivalent to standard KMeans.
     """
-    unique_clusters = set(cluster_ids)
-    cluster_to_label = {}
+    kmeans = KMeans(
+        n_clusters=n_clusters, init="k-means++", random_state=random_state, n_init=10
+    )
+    cluster_ids = kmeans.fit_predict(embeddings)
+    return cluster_ids
 
-    for cluster_id in unique_clusters:
-        # Get indices of all samples in this cluster
-        cluster_mask = cluster_ids == cluster_id
 
-        # Get the true labels for these samples
-        labels_in_cluster = true_labels[cluster_mask]
+def _cluster_agglomerative(
+    embeddings: np.ndarray,
+    n_clusters: int,
+    random_state: int,  # pylint: disable=unused-argument
+) -> np.ndarray:
+    """
+    Perform Agglomerative Clustering.
+    Note: AgglomerativeClustering does not support random_state.
+    """
+    agg = AgglomerativeClustering(
+        n_clusters=n_clusters,
+        linkage="ward",
+    )
+    cluster_ids = agg.fit_predict(embeddings)
+    return cluster_ids
 
-        if len(labels_in_cluster) > 0:
-            # Find the most common label in this cluster
-            most_common_label = Counter(labels_in_cluster).most_common(1)[0][0]
-            cluster_to_label[cluster_id] = most_common_label
-        else:
-            # If cluster is empty, map to a placeholder (shouldn't happen)
-            cluster_to_label[cluster_id] = true_labels[0]
 
-    # Map cluster IDs to actual sense labels
-    predicted_labels = np.array([cluster_to_label[cid] for cid in cluster_ids])
+def _cluster_spectral(
+    embeddings: np.ndarray,
+    n_clusters: int,
+    random_state: int,
+) -> np.ndarray:
+    """
+    Perform Spectral Clustering.
+    """
+    spectral = SpectralClustering(
+        n_clusters=n_clusters,
+        random_state=random_state,
+        affinity="nearest_neighbors",
+        n_init=10,
+        assign_labels="kmeans",
+    )
+    cluster_ids = spectral.fit_predict(embeddings)
+    return cluster_ids
 
-    return predicted_labels
+
+_clustering_methods = {
+    "random": _cluster_random,
+    "kmeans": _cluster_kmeans,
+    "kmeans++": _cluster_kmeans_plus_plus,
+    "gmm": _cluster_gmm,
+    "agglomerative": _cluster_agglomerative,
+    "spectral": _cluster_spectral,
+}
 
 
 def make_metrics(
@@ -324,24 +307,19 @@ def _compute_layer_metrics(
     embeddings = np.array([rec[1] for rec in recs])
 
     # Select clustering method
-    clustering_methods = {
-        "kmeans": _cluster_kmeans,
-        "random": _cluster_random,
-        "hdbscan": _cluster_hdbscan,
-        "gmm": _cluster_gmm,
-    }
 
-    if clustering_method not in clustering_methods:
+    if clustering_method not in _clustering_methods:
         raise ValueError(f"Unknown clustering method: {clustering_method}")
 
-    cluster_func = clustering_methods[clustering_method]
+    cluster_func = _clustering_methods[clustering_method]
 
     # Perform clustering and assign labels via majority voting
     # This maps cluster IDs to actual sense labels for meaningful comparison
     failed = False
 
     try:
-        predicted_labels = cluster_func(embeddings, true_labels, random_state)
+        n_clusters = len(set(true_labels))
+        predicted_labels = cluster_func(embeddings, n_clusters, random_state)
         if len(np.unique(predicted_labels)) < 2:
             raise ValueError(
                 f"No clusters found for lemma {lemma}, layer {layer}, "

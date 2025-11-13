@@ -154,6 +154,9 @@ def run_evaluate_metrics(
     print("=" * 50)
 
 
+__all__ = ["run_evaluate_metrics"]
+
+
 def main() -> None:
     """Program entrypoint."""
     args = get_args(__doc__, get_model_arg=True)

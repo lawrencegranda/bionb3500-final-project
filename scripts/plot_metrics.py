@@ -89,25 +89,21 @@ def plot_metric_by_lemma(
     Layer numbers are shown on dual axes (BERT on bottom, DistilBERT on top).
     """
     # Define colors for models
+    default_colors = ["#1f77b4", "#ff7f0e"]
     model_colors = {
-        "bert-base-uncased": "#1f77b4",  # Blue
-        "distilbert-base-uncased": "#ff7f0e",  # Orange
+        model: default_colors[i % len(default_colors)]
+        for i, model in enumerate(model_names)
     }
 
-    # Define linestyles for clustering methods
-    method_linestyles = {
-        "kmeans": "-",
-        "hdbscan": "-",
-        "gmm": "-",
-        "random": "--",  # Dashed for random
-    }
+    # Define linestyles and markers for clustering methods, assigning unique values for each
+    default_markers = ["o", "s", "^", "D", "X", "v", "P"]
 
-    # Define markers for clustering methods
+    method_linestyles = {method: "-" for method in clustering_methods}
+    method_linestyles["random"] = ":"
+
     method_markers = {
-        "kmeans": "o",
-        "hdbscan": "s",
-        "gmm": "^",
-        "random": "x",
+        method: default_markers[i % len(default_markers)]
+        for i, method in enumerate(clustering_methods)
     }
 
     _fig, ax = plt.subplots(figsize=(12, 6))
@@ -159,7 +155,7 @@ def plot_metric_by_lemma(
             marker = method_markers.get(clustering_method, "o")
 
             # Create label
-            model_short = "BERT" if "bert-base" in model_name else "DistilBERT"
+            model_short = "DistilBERT" if "distil" in model_name else "BERT"
             label = f"{model_short} - {clustering_method}"
 
             # Plot with percentage-based positions
@@ -171,8 +167,8 @@ def plot_metric_by_lemma(
                 linestyle=linestyle,
                 marker=marker,
                 markersize=8,
-                linewidth=2.5,
-                alpha=0.8,
+                linewidth=2,
+                alpha=0.6,
             )
 
     # Set x-axis to percentage scale
@@ -275,34 +271,20 @@ def plot_metric_by_lemma(
     print(f"Saved plot: {output_file}")
 
 
-def main() -> None:
-    """Program entrypoint."""
-    args = get_args(__doc__)
-
-    metrics_dir = args.config.paths.metrics_dir
-    model_names = args.config.model.model_names
-    clustering_methods = args.config.model.clustering_methods
-
-    # Create output directory for metric plots
-    output_dir = Path("results/plots/metrics")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    print("=" * 70)
-    print(" " * 20 + "PLOTTING METRICS")
-    print("=" * 70)
-    print(f"Metrics directory: {metrics_dir}")
-    print(f"Output directory: {output_dir}")
-    print(f"Models: {', '.join(model_names)}")
-    print(f"Clustering methods: {', '.join(clustering_methods)}")
-    print("=" * 70)
-    print()
+def run_plot_metrics(
+    metrics_dir: Path,
+    output_dir: Path,
+    model_names: List[str],
+    clustering_methods: List[str],
+) -> None:
+    """Run the plot metrics script."""
 
     # Get all lemmas and metrics
     lemmas, metrics = get_all_lemmas_and_metrics(metrics_dir)
 
     if not lemmas or not metrics:
         print("Error: No data found in metrics directory")
-        sys.exit(1)
+        return
 
     print(f"Found lemmas: {', '.join(lemmas)}")
     print(f"Found metrics: {', '.join(metrics)}")
@@ -327,10 +309,38 @@ def main() -> None:
                 metric_name,
             )
 
+    print(f"Generated {total_plots} plots in {output_dir}")
+    return
+
+
+__all__ = ["run_plot_metrics"]
+
+
+def main() -> None:
+    """Program entrypoint."""
+    args = get_args(__doc__)
+
+    metrics_dir = args.config.paths.metrics_dir
+    model_names = args.config.model.model_names
+    clustering_methods = args.config.model.clustering_methods
+
+    # Create output directory for metric plots
+    output_dir = Path("results/plots/metrics")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print("=" * 70)
+    print(" " * 20 + "PLOTTING METRICS")
+    print("=" * 70)
+    print(f"Metrics directory: {metrics_dir}")
+    print(f"Output directory: {output_dir}")
+    print(f"Models: {', '.join(model_names)}")
+    print(f"Clustering methods: {', '.join(clustering_methods)}")
+    print("=" * 70)
+
+    run_plot_metrics(metrics_dir, output_dir, model_names, clustering_methods)
+
     print("\n" + "=" * 70)
     print(" " * 20 + "PLOTTING COMPLETE")
-    print("=" * 70)
-    print(f"Generated {total_plots} plots in {output_dir}")
     print("=" * 70)
 
 

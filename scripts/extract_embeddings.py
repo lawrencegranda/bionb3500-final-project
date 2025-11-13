@@ -41,6 +41,9 @@ def run_extract_embeddings(
         print(f"Done! Embeddings saved to {db_path}.")
 
 
+__all__ = ["run_extract_embeddings"]
+
+
 def main() -> None:
     """Program entrypoint."""
     args = get_args(__doc__, get_model_arg=True)
