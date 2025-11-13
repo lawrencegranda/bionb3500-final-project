@@ -45,4 +45,4 @@ clustering_methods:
 # Layers to use for clustering
 clustering_layers:
   bert-base-uncased: [0, 4, 8, 12]
-  distilbert-base-uncased: [0, 3, 6]
+  distilbert-base-uncased: [0, 2, 4, 6]
