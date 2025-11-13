@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Mapping, Sequence
 
 import numpy as np
-from sklearn.cluster import KMeans, AgglomerativeClustering, SpectralClustering
+from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import (
     silhouette_score,

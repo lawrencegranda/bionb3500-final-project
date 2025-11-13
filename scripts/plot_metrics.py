@@ -10,6 +10,7 @@ from collections import defaultdict
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
+from matplotlib.scale import FuncScale
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -143,7 +144,9 @@ def plot_metric_by_lemma(
                 continue
 
             # Extract values in layer order
-            values = [data[lemma].get(layer, np.nan) for layer in layers]
+            values = np.array(
+                [data[lemma].get(layer, np.nan) for layer in layers], dtype=float
+            )
 
             # Skip if all values are NaN
             if all(np.isnan(v) for v in values):
@@ -259,8 +262,30 @@ def plot_metric_by_lemma(
         fontweight="bold",
     )
     ax.grid(True, alpha=0.3, linestyle="--", axis="y")
-    ax.legend(loc="best", fontsize=9, ncol=2)
 
+    def scale_forward(x):
+        # Handle negative and zero values gracefully for arrays or scalars
+        x = np.asarray(x)
+        res = np.empty_like(x, dtype=float)
+        neg_mask = x < 0
+        pos_mask = x >= 0
+        res[neg_mask] = -np.sqrt(-x[neg_mask])
+        res[pos_mask] = np.sqrt(x[pos_mask])
+        return res
+
+    def scale_inverse(x):
+        x = np.asarray(x)
+        res = np.empty_like(x, dtype=float)
+        neg_mask = x < 0
+        pos_mask = x >= 0
+        res[neg_mask] = -np.power(-x[neg_mask], 2)
+        res[pos_mask] = np.power(x[pos_mask], 2)
+
+        return res
+
+    yscale = FuncScale(ax, functions=(scale_forward, scale_inverse))
+
+    ax.set_yscale(yscale)
     plt.tight_layout()
 
     # Save plot
